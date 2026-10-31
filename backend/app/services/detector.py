@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 
 from backend.app.core.config import settings
 from backend.app.services.url_analyzer import url_analyzer
-from backend.app.services.text_baseline import text_scam_baseline
+from backend.app.services.onnx_classifier import onnx_classifier
 from backend.app.services.action_engine import action_engine
 
 
@@ -39,8 +39,8 @@ class ScamDetector:
         # 1. URL & Domain Analysis
         url_analysis = url_analyzer.analyze_text_for_urls(sanitized_content)
 
-        # 2. Text Analysis
-        text_analysis = text_scam_baseline.analyze_text(sanitized_content)
+        # 2. Text Analysis via IndicBERT / Baseline Engine
+        text_analysis = onnx_classifier.predict(sanitized_content)
 
         # 3. Special handling for QR inputs
         qr_reasons = []
@@ -73,6 +73,12 @@ class ScamDetector:
 
         if qr_score_boost > 0:
             combined_score = max(combined_score, qr_score_boost)
+
+        # Allowlist Dampener: If message contains verified official domain (e.g. *.gov.in, sbi.co.in)
+        # and no malicious demands (PIN entry, OTP sharing) exist, classify as legitimate/low risk
+        has_allowlisted_domain = any(d.get("is_allowlisted") for d in url_analysis.get("domain_results", []))
+        if has_allowlisted_domain and not ("ENTER_PIN_TO_RECEIVE" in text_analysis["reasons"] or "ASKS_FOR_OTP" in text_analysis["reasons"]):
+            combined_score = min(combined_score, 0.15)
 
         # Round to 2 decimal places
         combined_score = round(min(1.0, max(0.0, combined_score)), 2)

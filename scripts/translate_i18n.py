@@ -94,3 +94,4 @@ if __name__ == "__main__":
                         help="Translation engine (indictrans2 for Colab GPU, curated for local pre-build)")
     args = parser.parse_args()
     run_translation(args.engine)
+

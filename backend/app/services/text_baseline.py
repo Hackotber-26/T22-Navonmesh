@@ -37,50 +37,56 @@ class TextScamBaseline:
                 r'(ವಿದ್ಯುತ್\s*(?:ಸಂಪರ್ಕ|ಬಿಲ್)?\s*.*(?:ಕಡಿತ|ರದ್ದು|ಸ್ಥಗಿತ))',
             ],
             "UPI_COLLECT_FRAUD": [
-                r'(?i)\b(enter\s*(upi)?\s*pin\s*to\s*(receive|credit|claim|get)|pin\s*daal\s*kar\s*(paise|cash))\b',
-                r'(?i)\b(collect\s*request\s*of\s*rs|accept\s*collect\s*request|claim\s*refund\s*of\s*rs)\b',
-                r'(?i)\b(scan\s*(this)?\s*qr\s*to\s*(receive|get|credit)\s*(money|cash|payment))\b',
-                # Devanagari
-                r'((पैसे|रुपये)\s*(प्राप्त\s*करने|पाने)\s*के\s*लिए\s*पिन\s*(दर्ज\s*करें|डालें))',
-                r'(कलेक्ट\s*रिक्वेस्ट\s*(स्वीकार|accept)\s*करें)',
+                r'(?i)\b(enter\s*(?:upi)?\s*pin\s*to\s*(?:receive|credit|claim|get)|pin\s*daal\s*kar\s*(?:paise|cash))\b',
+                r'(?i)\b(collect\s*request\s*(?:of\s*rs|accept|approve)?|claim\s*refund|cashback\s*(?:of\s*rs|\d+))\b',
+                r'(?i)\b(scan\s*(?:this)?\s*qr\s*to\s*(?:receive|get|credit)\s*(?:money|cash|payment))\b',
+                r'(?i)\b(receive\s*(?:money|cash)\s*.*(?:upi|pin|collect))\b',
+                # Devanagari (Hindi / Marathi)
+                r'(?:पैसे|रुपये|कॅशबॅक|कॅश)?\s*.*(?:कलेक्ट\s*रिक्वेस्ट|पिन\s*दर्ज\s*करें|पिन\s*डालें|पिन\s*टाका)',
+                r'(कलेक्ट\s*रिक्वेस्ट\s*(?:स्वीकार|accept)\s*करें)',
                 # Bengali
-                r'(টাকা\s*পাওয়ার\s*জন্য\s*ইউপিআই\s*পিন\s*দিন)',
+                r'(?:টাকা|ক্যাশব্যাক)?\s*.*(?:ইউপিআই\s*পিন\s*দিন|কালেক্ট\s*রিকোয়েস্ট|পিন\s*দিন)',
                 # Kannada
-                r'(ಹಣ\s*ಪಡೆಯಲು\s*ಯುಪಿಐ\s*ಪಿನ್\s*(ನಮೂದಿಸಿ|ಹಾಕಿ))',
+                r'(?:ಹಣ|ಕ್ಯಾಶ್‌ಬ್ಯಾಕ್)?\s*.*(?:ಯುಪಿಐ\s*ಪಿನ್\s*(?:ನಮೂದಿಸಿ|ಹಾಕಿ)|ಕಲೆಕ್ಟ್\s*ವಿನಂತಿ)',
+            ],
+            "MALICIOUS_QR": [
+                r'(?i)^upi://pay\?',
+                r'(?i)\b(scan\s*(?:this)?\s*qr\s*(?:code)?\s*.*(?:receive|get|credit|claim|paytm|phonepe))\b',
+                r'(क्यूआर\s*कोड\s*स्कैन\s*.*(?:पैसे|पिन)|কিউআর\s*কোড\s*স্ক্যান\s*.*(?:টাকা|পিন)|ಕ್ಯೂಆರ್\s*ಕೋಡ್\s*ಸ್ಕ್ಯಾನ್)',
             ],
             "PARCEL_DELIVERY": [
-                r'(?i)\b(package|parcel|shipment|courier)\s*(on\s*hold|pending|undelivered|held\s*at\s*customs)\b',
-                r'(?i)\b(india\s*post|speed\s*post|delhivery|bluedart)\s*(package|address\s*incomplete|fee\s*due)\b',
-                r'(?i)\b(pay\s*(rs\.?|inr)?\s*\d+\s*(redelivery|customs?|clearance)\s*fee)\b',
+                r'(?i)\b(package|parcel|shipment|courier)\s*.*(on\s*hold|pending|undelivered|held\s*at\s*customs|delivery\s*failed)\b',
+                r'(?i)\b(india\s*post|speed\s*post|delhivery|bluedart)\s*.*(package|address|fee\s*due|track|parcel)\b',
+                r'(?i)\b(pay\s*(?:rs\.?|inr)?\s*\d+\s*(?:redelivery|customs?|clearance|fee|delivery))\b',
                 # Devanagari
-                r'(पार्सल\s*(अटका\s*हुआ|होल्ड\s*पर|डिलीवर\s*नहीं\s*हो\s*सका))',
+                r'(?:पार्सल|कूरियर)\s*.*(?:अटका|होल्ड|डिलीवर|रोक|शुल्क)',
                 r'(डाक\s*घर|इंडिया\s*पोस्ट\s*पार्सल)',
                 # Bengali
-                r'(পার্সেল\s*(আটকে\s*গেছে|ডেলিভারি\s*ব্যর্থ))',
+                r'(?:পার্সেল|কুরিয়ার|স্পিড\s*পোস্ট)\s*.*(?:আটকে|ব্যর্থ|ফি|ডেলিভারি)',
                 # Kannada
-                r'(ಪಾರ್ಸೆಲ್\s*(ತಡೆಹಿಡಿಯಲಾಗಿದೆ|ವಿತರಣೆ\s*ವಿಫಲವಾಗಿದೆ))',
+                r'(?:ಪಾರ್ಸೆಲ್|ಕೊರಿಯರ್)\s*.*(?:ತಡೆಹಿಡಿಯಲಾಗಿದೆ|ವಿಫಲವಾಗಿದೆ|ಶುಲ್ಕ|ವಿತರಣೆ)',
             ],
             "LOTTERY_PRIZE": [
-                r'(?i)\b(congratulations|congrats|lucky\s*winner|won\s*(rs\.?|inr)?\s*[\d,]+|kbc\s*(lottery|lucky\s*draw))\b',
-                r'(?i)\b(lottery\s*winner|claim\s*your\s*(car|prize|cashback|cash\s*reward))\b',
-                r'(?i)\b(25\s*lakh\s*(lottery|kbc)|claim\s*free\s*recharge)\b',
+                r'(?i)\b(congratulations|congrats|lucky\s*winner|won\s*(?:rs\.?|inr)?\s*[\d,]+|kbc\s*(?:lottery|lucky\s*draw))\b',
+                r'(?i)\b(lottery\s*winner|claim\s*your\s*(?:car|prize|cashback|cash\s*reward))\b',
+                r'(?i)\b(\d+\s*lakh\s*(?:lottery|kbc)|claim\s*free\s*recharge)\b',
                 # Devanagari
-                r'(बधाई\s*हो|लॉटरी\s*जीत\s*गए|केबीसी\s*लकी\s*ड्रॉ|इनाम\s*मिला\s*है)',
+                r'(?:बधाई|लॉटरी|केबीसी|इनाम|लकी\s*ड्रॉ|बक्षीस)\s*.*(?:जीत|मिला|जिंकला|लाख)',
                 # Bengali
-                r'(অভিনন্দন|লটারি\s*জিতেছেন|পুরস্কার\s*পেয়েছেন)',
+                r'(?:অভিনন্দন|লটারি|পুরস্কার)\s*.*(?:জিতেছেন|পেয়েছেন|দাবি)',
                 # Kannada
-                r'(ಅಭಿನಂದನೆಗಳು|ಲಾಟರಿ\s*ಗೆದ್ದಿದ್ದೀರಿ|ಬಹುಮಾನ\s*ಗೆದ್ದಿದ್ದೀರಿ)',
+                r'(?:ಅಭಿನಂದನೆಗಳು|ಲಾಟರಿ|ಬಹುಮಾನ)\s*.*(?:ಗೆದ್ದಿದ್ದೀರಿ|ಪಡೆಯಲು)',
             ],
             "JOB_SCAM": [
-                r'(?i)\b(work\s*from\s*home|part\s*time\s*job|earn\s*(rs\.?|inr)?\s*\d+[\d,-]*\s*(daily|per\s*day))\b',
-                r'(?i)\b(like\s*youtube\s*videos\s*(and\s*earn|job)|telegram\s*(task|job|income))\b',
-                r'(?i)\b(ghar\s*baithe\s*(paise\s*kamaye|kamaye\s*daily))\b',
+                r'(?i)\b(work\s*from\s*home|part\s*time\s*job|earn\s*(?:rs\.?|inr)?\s*\d+[\d,-]*\s*(?:daily|per\s*day))\b',
+                r'(?i)\b(like\s*youtube\s*videos\s*(?:and\s*earn|job)|telegram\s*(?:task|job|income|group))\b',
+                r'(?i)\b(ghar\s*baithe\s*(?:paise\s*kamaye|kamaye\s*daily))\b',
                 # Devanagari
-                r'(घर\s*बैठे\s*(पैसे\s*कमाएं|कमाई)|पार्ट\s*टाइम\s*जॉब)',
+                r'(?:घर\s*बैठे|घरी\s*बसूण|पार्ट\s*टाइम)\s*.*(?:पैसे\s*कमाएं|कमाई|कमवा|जॉब)',
                 # Bengali
-                r'(ঘরে\s*বসে\s*(টাকা\s*আয়|পার্ট\s*টাইম\s*কাজ))',
+                r'(?:ঘরে\s*বসে|পার্ট\s*টাইম)\s*.*(?:টাকা\s*আয়|কাজ|টেলিগ্রাম)',
                 # Kannada
-                r'(ಮನೆಯಲ್ಲೇ\s*ಕುಳಿತು\s*(ಗಳಿಸಿ|ಉದ್ಯೋಗ))',
+                r'(?:ಮನೆಯಲ್ಲೇ\s*ಕುಳಿತು|ಪಾರ್ಟ್\s*ಟೈಮ್)\s*.*(?:ಗಳಿಸಿ|ಉದ್ಯೋಗ|ಟೆಲಿಗ್ರಾಂ)',
             ],
         }
 

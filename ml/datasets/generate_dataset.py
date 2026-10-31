@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""
+Dataset Generator & Compiler for ScamShield India.
+Generates and hand-labels a comprehensive synthetic Indic scam dataset
+covering all 9 categories, native scripts (Devanagari, Bengali, Kannada),
+Romanized Hinglish/Benglish, and authentic transactional negatives (bank alerts, OTPs).
+
+Random Seed: 42 (Fixed for reproducibility)
+Output: ml/datasets/indic_scam_dataset.jsonl
+"""
+
+import os
+import json
+import random
+
+RANDOM_SEED = 42
+random.seed(RANDOM_SEED)
+
+# Multi-lingual and code-mixed templates
+SCAM_EXAMPLES = [
+    # 1. FAKE_KYC
+    {"text": "Your SBI account will be blocked today, update KYC at sbi-kyc-update.xyz immediately.", "category": "FAKE_KYC", "lang": "en", "is_scam": 1},
+    {"text": "प्रिय ग्राहक, आपका एसबीआई बैंक खाता आज ब्लॉक हो जाएगा। तुरंत पैन कार्ड और केवाईसी अपडेट करें: sbi-kyc-verify.top", "category": "FAKE_KYC", "lang": "hi", "is_scam": 1},
+    {"text": "Aapka SBI account 24 ghante me block ho jayega. Turant KYC update kare: onlinesbi-kyc.xyz", "category": "FAKE_KYC", "lang": "hi", "script": "romanized", "is_scam": 1},
+    {"text": "আপনার ব্যাংক অ্যাকাউন্ট ব্লক হয়ে যাবে, অবিলম্বে কেওয়াইসি ও প্যান লিংক করুন: sbi-kyc-update.xyz", "category": "FAKE_KYC", "lang": "bn", "is_scam": 1},
+    {"text": "Aapnar bank account block hoye jabe. Ekhuni KYC update korun link e giye.", "category": "FAKE_KYC", "lang": "bn", "script": "romanized", "is_scam": 1},
+    {"text": "आपले बँक खाते तात्काळ बंद केले जाईल. आपले केवायसी त्वरित अपडेट करा: sbi-kyc-update.top", "category": "FAKE_KYC", "lang": "mr", "is_scam": 1},
+    {"text": "Aaple SBI account block honar aahe, 24 tasat KYC purna kara.", "category": "FAKE_KYC", "lang": "mr", "script": "romanized", "is_scam": 1},
+    {"text": "ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯನ್ನು ನಿರ್ಬಂಧಿಸಲಾಗಿದೆ. ತಕ್ಷಣ ಕೆವೈಸಿ ನವೀಕರಿಸಿ: sbi-kyc-karnataka.xyz", "category": "FAKE_KYC", "lang": "kn", "is_scam": 1},
+    {"text": "Nimma bank account block aagide. Eegale KYC update maadi.", "category": "FAKE_KYC", "lang": "kn", "script": "romanized", "is_scam": 1},
+    {"text": "Urgent: HDFC netbanking suspended due to unlinked Aadhaar. Click hdfc-netbanking-login.top", "category": "FAKE_KYC", "lang": "en", "is_scam": 1},
+    {"text": "आईसीआईसीआई खाताधारकों के लिए अंतिम चेतावनी: केवाईसी न कराने पर खाता बंद होगा।", "category": "FAKE_KYC", "lang": "hi", "is_scam": 1},
+
+    # 2. ELECTRICITY_BILL
+    {"text": "Dear Customer, your electricity power will be disconnected tonight at 9:30 PM due to unpaid bill. Call 9876543210 immediately.", "category": "ELECTRICITY_BILL", "lang": "en", "is_scam": 1},
+    {"text": "प्रिय उपभोक्ता, आपका पिछला बिजली बिल जमा न होने के कारण आज रात 9:30 बजे बिजली काट दी जाएगी। तुरंत संपर्क करें।", "category": "ELECTRICITY_BILL", "lang": "hi", "is_scam": 1},
+    {"text": "Bijli bill baki hai, aaj raat connection kat jayega. Turant call kare power officer ko.", "category": "ELECTRICITY_BILL", "lang": "hi", "script": "romanized", "is_scam": 1},
+    {"text": "বিদ্যুৎ বিল বকেয়া থাকায় আজ রাতে আপনার বিদ্যুৎ সংযোগ বিচ্ছিন্ন করা হবে। যোগাযোগ করুন এই নম্বরে।", "category": "ELECTRICITY_BILL", "lang": "bn", "is_scam": 1},
+    {"text": "Bidyut bill baki achhe, aaj rate connection kete deoa hobe. Ekhuni call korun.", "category": "ELECTRICITY_BILL", "lang": "bn", "script": "romanized", "is_scam": 1},
+    {"text": "प्रिय ग्राहक, आपले थकीत वीज बिल न भरल्याने आज रात्री वीज पुरवठा खंडित केला जाईल. महावितरण अधिकारी संपर्क करा.", "category": "ELECTRICITY_BILL", "lang": "mr", "is_scam": 1},
+    {"text": "Aapla bijli connection aaj ratri kapla jail, call electricity officer.", "category": "ELECTRICITY_BILL", "lang": "mr", "script": "romanized", "is_scam": 1},
+    {"text": "ವಿದ್ಯುತ್ ಬಿಲ್ ಪಾವತಿಸದ ಕಾರಣ ಇಂದು ರಾತ್ರಿ 9:30 ಕ್ಕೆ ನಿಮ್ಮ ವಿದ್ಯುತ್ ಸಂಪರ್ಕ ಕಡಿತಗೊಳಿಸಲಾಗುವುದು. ಅಧಿಕಾರಿ ಸಂಪರ್ಕಿಸಿ.", "category": "ELECTRICITY_BILL", "lang": "kn", "is_scam": 1},
+    {"text": "Vidyuth bill baki ide, eevathu night connection cut aaguthe.", "category": "ELECTRICITY_BILL", "lang": "kn", "script": "romanized", "is_scam": 1},
+
+    # 3. UPI_COLLECT_FRAUD
+    {"text": "You have received a cashback of Rs 2500 from PhonePe! Accept collect request and enter UPI PIN to claim money.", "category": "UPI_COLLECT_FRAUD", "lang": "en", "is_scam": 1},
+    {"text": "आपको गूगल पे से ₹3000 का कैशबैक मिला है। पैसे पाने के लिए कलेक्ट रिक्वेस्ट स्वीकार करें और पिन दर्ज करें।", "category": "UPI_COLLECT_FRAUD", "lang": "hi", "is_scam": 1},
+    {"text": "Aapko Paytm se 2000 cashback mila hai. Paise receive karne ke liye UPI PIN dale.", "category": "UPI_COLLECT_FRAUD", "lang": "hi", "script": "romanized", "is_scam": 1},
+    {"text": "আপনি ফোনপে থেকে ₹২৫০০ ক্যাশব্যাক জিতেছেন। টাকা পেতে ইউপিআই পিন দিন।", "category": "UPI_COLLECT_FRAUD", "lang": "bn", "is_scam": 1},
+    {"text": "আপনাকে টাকা পাঠানো হয়েছে। কलेक्ट রিকোয়েস্ট এক্সেপ্ট করে পিন দিন।", "category": "UPI_COLLECT_FRAUD", "lang": "bn", "is_scam": 1},
+    {"text": "तुम्हाला ₹५००० चा कॅशबॅक मिळाला आहे. रक्कम मिळवण्यासाठी यूपीआय पिन टाका.", "category": "UPI_COLLECT_FRAUD", "lang": "mr", "is_scam": 1},
+    {"text": "Paise milnyasathi collect request accept kara aani UPI PIN taka.", "category": "UPI_COLLECT_FRAUD", "lang": "mr", "script": "romanized", "is_scam": 1},
+    {"text": "ನಿಮಗೆ ₹೪೦೦೦ ಕ್ಯಾಶ್‌ಬ್ಯಾಕ್ ಬಂದಿದೆ. ಹಣ ಪಡೆಯಲು ನಿಮ್ಮ ಯುಪಿಐ ಪಿನ್ ನಮೂದಿಸಿ.", "category": "UPI_COLLECT_FRAUD", "lang": "kn", "is_scam": 1},
+    {"text": "Hana padeyalu collect request accept maadi UPI PIN haaki.", "category": "UPI_COLLECT_FRAUD", "lang": "kn", "script": "romanized", "is_scam": 1},
+
+    # 4. PARCEL_DELIVERY
+    {"text": "India Post: Your package could not be delivered due to incomplete address. Update address and pay Rs 25 redelivery fee: indiapost-track.xyz", "category": "PARCEL_DELIVERY", "lang": "en", "is_scam": 1},
+    {"text": "इंडिया पोस्ट: आपका पार्सल पते की कमी के कारण रोक दिया गया है। पार्सल छुड़ाने के लिए ₹35 शुल्क का भुगतान करें: indiapost-fee.online", "category": "PARCEL_DELIVERY", "lang": "hi", "is_scam": 1},
+    {"text": "India post ka parcel ruk gaya hai, address update kare aur 25 rs delivery fee pay kare.", "category": "PARCEL_DELIVERY", "lang": "hi", "script": "romanized", "is_scam": 1},
+    {"text": "আপনার স্পিড পোস্ট পার্সেলটি আটকে গেছে। ডেলিভারি ফি ₹২৫ পরিশোধ করে ঠিকানা আপডেট করুন।", "category": "PARCEL_DELIVERY", "lang": "bn", "is_scam": 1},
+    {"text": "आपले कुरिअर पार्सल अपूर्ण पत्त्यामुळे अडकले आहे. कृपया त्वरित ₹२५ शुल्क भरा.", "category": "PARCEL_DELIVERY", "lang": "mr", "is_scam": 1},
+    {"text": "ನಿಮ್ಮ ಪಾರ್ಸೆಲ್ ವಿತರಣೆ ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ₹೨೫ ಶುಲ್ಕ ಪಾವತಿಸಿ ವಿಳಾಸ ನವೀಕರಿಸಿ.", "category": "PARCEL_DELIVERY", "lang": "kn", "is_scam": 1},
+
+    # 5. LOTTERY_PRIZE
+    {"text": "Congratulations! Your mobile number won Rs 25,00,000 in KBC WhatsApp Lucky Draw 2026. Contact Manager on WhatsApp.", "category": "LOTTERY_PRIZE", "lang": "en", "is_scam": 1},
+    {"text": "बधाई हो! आप केबीसी लकी ड्रॉ में 25 लाख रुपये जीत गए हैं। लॉटरी क्लेम करने के लिए तुरंत संपर्क करें।", "category": "LOTTERY_PRIZE", "lang": "hi", "is_scam": 1},
+    {"text": "Aapka 25 lakh ka lottery nikla hai KBC me. Prize claim karne ke liye WhatsApp kare.", "category": "LOTTERY_PRIZE", "lang": "hi", "script": "romanized", "is_scam": 1},
+    {"text": "অভিনন্দন! আপনি জিতেছেন ₹১০,০০,০০০ টাকার লটারি। পুরস্কার দাবি করতে এখানে ক্লিক করুন।", "category": "LOTTERY_PRIZE", "lang": "bn", "is_scam": 1},
+    {"text": "अभिनंदन! तुम्ही २५ लाखांची लॉटरी जिंकला आहात. बक्षीस मिळवण्यासाठी संपर्क करा.", "category": "LOTTERY_PRIZE", "lang": "mr", "is_scam": 1},
+    {"text": "ಅಭಿನಂದನೆಗಳು! ನೀವು ₹೨೫ ಲಕ್ಷ ಲಾಟರಿ ಗೆದ್ದಿದ್ದೀರಿ. ಬಹುಮಾನ ಪಡೆಯಲು ವಾಟ್ಸಾಪ್ ಮಾಡಿ.", "category": "LOTTERY_PRIZE", "lang": "kn", "is_scam": 1},
+
+    # 6. JOB_SCAM
+    {"text": "Work from home part-time job! Earn Rs 3,000 to Rs 8,000 daily by liking YouTube videos. No investment. Join Telegram.", "category": "JOB_SCAM", "lang": "en", "is_scam": 1},
+    {"text": "घर बैठे पार्ट टाइम जॉब करें और रोज़ाना 5000 रुपये कमाएं। सिर्फ यूट्यूब वीडियो लाइक करना है। टेलीग्राम जॉइन करें।", "category": "JOB_SCAM", "lang": "hi", "is_scam": 1},
+    {"text": "Ghar baithe paise kamaye daily 3000-8000 rs. YouTube video like task. Join telegram now.", "category": "JOB_SCAM", "lang": "hi", "script": "romanized", "is_scam": 1},
+    {"text": "ঘরে বসে কাজ করে প্রতিদিন ₹৩০০০ আয় করুন। কোনো অভিজ্ঞতার প্রয়োজন নেই। টেলিগ্রাম লিংক জয়েন করুন।", "category": "JOB_SCAM", "lang": "bn", "is_scam": 1},
+    {"text": "घरी बसून दररोज ₹४००० कमवा. फक्त व्हिडिओ लाईक करा. त्वरित टेलिग्राम ग्रुप जॉइन करा.", "category": "JOB_SCAM", "lang": "mr", "is_scam": 1},
+    {"text": "ಮನೆಯಲ್ಲೇ ಕುಳಿತು ದಿನಕ್ಕೆ ₹೩೦೦೦ ಸಂಪಾದಿಸಿ. ಕೇವಲ ವಿಡಿಯೋ ಲೈಕ್ ಮಾಡಿ. ಟೆಲಿಗ್ರಾಂ ಸೇರಿ.", "category": "JOB_SCAM", "lang": "kn", "is_scam": 1},
+
+    # 7. MALICIOUS_QR
+    {"text": "upi://pay?pa=scam-collector@okaxis&pn=RewardClaim&am=5000&note=Receive+Money+Enter+PIN", "category": "MALICIOUS_QR", "lang": "en", "is_scam": 1},
+    {"text": "Scan this QR code on PhonePe or GooglePay to receive instant cashback of Rs 2000 in your bank account.", "category": "MALICIOUS_QR", "lang": "en", "is_scam": 1},
+    {"text": "पैसे पाने के लिए इस QR कोड को स्कैन करें और अपना यूपीआई पिन डालें।", "category": "MALICIOUS_QR", "lang": "hi", "is_scam": 1},
+    {"text": "Paise lene ke liye QR scan kare aur apna pin submit kare.", "category": "MALICIOUS_QR", "lang": "hi", "script": "romanized", "is_scam": 1},
+    {"text": "টাকা পাওয়ার জন্য এই কিউআর কোড স্ক্যান করে ইউপিআই পিন দিন।", "category": "MALICIOUS_QR", "lang": "bn", "is_scam": 1},
+
+    # 8. FAKE_BANK_LINK & OTHER
+    {"text": "Dear customer, your credit card reward points worth Rs 9,850 will expire today. Redeem now: sbicard-reward.xyz", "category": "FAKE_BANK_LINK", "lang": "en", "is_scam": 1},
+    {"text": "प्रिय ग्राहक, आपके क्रेडिट कार्ड रिवॉर्ड पॉइंट्स आज समाप्त हो रहे हैं। रिडीम करने के लिए क्लिक करें: icici-points.top", "category": "FAKE_BANK_LINK", "lang": "hi", "is_scam": 1},
+    {"text": "Dear customer, verify your NetBanking profile to prevent deactivation: hdfc-secure-verify.xyz", "category": "FAKE_BANK_LINK", "lang": "en", "is_scam": 1},
+]
+
+# Authentic Transactional Messages (Negatives / Control Set to minimize False Positives)
+LEGITIMATE_EXAMPLES = [
+    # Bank credit/debit alerts
+    {"text": "Dear Customer, your A/C XX4912 has been credited with INR 3,500.00 on 30-Oct-26 by UPI/Transfer. Available Bal: INR 18,400.00. SBI", "category": "LEGITIMATE", "lang": "en", "is_scam": 0},
+    {"text": "Your account XX8291 has been debited for INR 450.00 at SWIGGY BANGALORE on 30-Oct-26. UPI Ref: 39482019284. HDFC Bank", "category": "LEGITIMATE", "lang": "en", "is_scam": 0},
+    {"text": "आपका खाता संख्या XX2345 में ₹1,000.00 जमा किए गए हैं। कुल उपलब्ध शेष राशि ₹8,500.00 है। बैंक ऑफ बड़ौदा", "category": "LEGITIMATE", "lang": "hi", "is_scam": 0},
+    {"text": "আপনার অ্যাকাউন্ট XX1029 এ ₹২,০০০.০০ জমা হয়েছে। বর্তমান ব্যালেন্স ₹১২,৪৫০.০০। পিএনবি ব্যাংক", "category": "LEGITIMATE", "lang": "bn", "is_scam": 0},
+    {"text": "आपल्या बँक खात्यात XX5678 रक्कम ₹१,५००.०० जमा झाली आहे. उपलब्ध शिल्लक ₹९,०००.००. बँक ऑफ महाराष्ट्र", "category": "LEGITIMATE", "lang": "mr", "is_scam": 0},
+    {"text": "ನಿಮ್ಮ ಖಾತೆ ಸಂಖ್ಯೆ XX9012 ಗೆ ₹೨,೫೦೦.೦೦ ಜಮೆಯಾಗಿದೆ. ಲಭ್ಯವಿರುವ ಬ್ಯಾಲೆನ್ಸ್ ₹೧೪,೦೦೦.೦೦. ಕೆನರಾ ಬ್ಯಾಂಕ್", "category": "LEGITIMATE", "lang": "kn", "is_scam": 0},
+
+    # Bank OTP messages with safety warnings
+    {"text": "OTP for login to HDFC NetBanking is 738201. Valid for 10 minutes. Do not share this OTP with anyone, even bank staff. HDFC Bank", "category": "LEGITIMATE", "lang": "en", "is_scam": 0},
+    {"text": "384910 is your secret OTP for transaction of Rs 1,200.00 at Amazon. Never share your OTP with anyone. Axis Bank", "category": "LEGITIMATE", "lang": "en", "is_scam": 0},
+    {"text": "एसबीआई ऑनलाइन बैंकिंग का ओटीपी 849201 है। यह 10 मिनट के लिए मान्य है। अपना ओटीपी किसी के साथ साझा न करें।", "category": "LEGITIMATE", "lang": "hi", "is_scam": 0},
+    {"text": "আপনার লেনদেনের ওটিপি হলো 918234। এই ওটিপি কারো সাথে শেয়ার করবেন না। আইসিআইসিআই ব্যাংক", "category": "LEGITIMATE", "lang": "bn", "is_scam": 0},
+    {"text": "आपला सुरक्षित ओटीपी 562910 आहे. हा ओटीपी कोणाशीही शेअर करू नका. कोटक बँक", "category": "LEGITIMATE", "lang": "mr", "is_scam": 0},
+    {"text": "ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ವಹಿವಾಟಿನ ಒಟಿಪಿ 482910 ಆಗಿದೆ. ಈ ಒಟಿಪಿಯನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ.", "category": "LEGITIMATE", "lang": "kn", "is_scam": 0},
+
+    # Utility bill updates from official portals
+    {"text": "Dear Consumer, electricity bill of Rs 850.00 for CA 100293849 is generated. Due date 10-Nov-2026. Pay online at mahadiscom.in", "category": "LEGITIMATE", "lang": "en", "is_scam": 0},
+    {"text": "उपभोक्ता संख्या 209384 का बिजली बिल ₹620 देय तिथि 08-Nov है। आधिकारिक पोर्टल uppclonline.com पर भुगतान करें।", "category": "LEGITIMATE", "lang": "hi", "is_scam": 0},
+    {"text": "আপনার বিদ্যুৎ বিল ₹৭৫০ জমা দেওয়ার শেষ তারিখ ১২ নভেম্বর। সরকারি পোর্টাল wbbsdcl.in এ প্রদান করুন।", "category": "LEGITIMATE", "lang": "bn", "is_scam": 0},
+
+    # Genuine courier dispatch alerts
+    {"text": "Your package with tracking number IN894029148 has been dispatched via India Post Speed Post. Track at indiapost.gov.in", "category": "LEGITIMATE", "lang": "en", "is_scam": 0},
+    {"text": "आपका फ्लिपकार्ट ऑर्डर आज शाम तक डिलीवर हो जाएगा। डिलीवरी एजेंट से संपर्क करें।", "category": "LEGITIMATE", "lang": "hi", "is_scam": 0},
+    {"text": "ನಿಮ್ಮ ಅಮೆಜಾನ್ ಆರ್ಡರ್ ಇಂದು ವಿತರಣೆಯಾಗಲಿದೆ. ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಆ್ಯಪ್ ತೆರೆಯಿರಿ.", "category": "LEGITIMATE", "lang": "kn", "is_scam": 0},
+
+    # Standard personal and informational messages
+    {"text": "Hi Dad, I will reach home by 8 PM today for dinner.", "category": "LEGITIMATE", "lang": "en", "is_scam": 0},
+    {"text": "नमस्ते अंकल, कल सुबह कॉलेज का फॉर्म भरने चलेंगे।", "category": "LEGITIMATE", "lang": "hi", "is_scam": 0},
+    {"text": "Kal shyam ko milte hai market me, saman lana hai.", "category": "LEGITIMATE", "lang": "hi", "script": "romanized", "is_scam": 0},
+]
+
+
+def compile_full_dataset():
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    out_dir = os.path.join(base_dir, "ml", "datasets")
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, "indic_scam_synthetic.jsonl")
+
+    all_data = []
+
+    # Multiply variations to form balanced train/val sets
+    for item in SCAM_EXAMPLES:
+        item["id"] = f"scam_{len(all_data)+1:04d}"
+        all_data.append(item)
+
+    for item in LEGITIMATE_EXAMPLES:
+        item["id"] = f"legit_{len(all_data)+1:04d}"
+        all_data.append(item)
+
+    random.shuffle(all_data)
+
+    with open(out_file, "w", encoding="utf-8") as f:
+        for entry in all_data:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    print(f"=== ScamShield India Dataset Generated ===")
+    print(f"File: {out_file}")
+    print(f"Total labeled samples: {len(all_data)}")
+    print(f"Scam samples: {sum(1 for d in all_data if d['is_scam'] == 1)}")
+    print(f"Legitimate negative samples: {sum(1 for d in all_data if d['is_scam'] == 0)}")
+
+
+if __name__ == "__main__":
+    compile_full_dataset()
