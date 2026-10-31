@@ -8,6 +8,7 @@ from backend.app.core.config import settings
 from backend.app.core.database import init_db
 from backend.app.api.health import router as health_router
 from backend.app.api.analyze import router as analyze_router
+from backend.app.api.stats import router as stats_router
 
 logging.basicConfig(
     level=logging.INFO if not settings.DEBUG else logging.DEBUG,
@@ -62,6 +63,7 @@ async def enforce_payload_limit(request: Request, call_next):
 # Include routers
 app.include_router(health_router)
 app.include_router(analyze_router)
+app.include_router(stats_router)
 
 
 @app.get("/")
