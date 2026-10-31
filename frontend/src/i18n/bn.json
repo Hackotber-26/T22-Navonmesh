@@ -2,7 +2,8 @@
   "meta": {
     "language": "bn",
     "name": "বাংলা",
-    "reviewed": false
+    "reviewed": false,
+    "engine": "Curated Indic Templates"
   },
   "app": {
     "title": "স্ক্যামশিল্ড ইন্ডিয়া",
@@ -130,4 +131,3 @@
     "SAVE_EVIDENCE": "প্রমাণ হিসেবে মেসেজ ও ট্রানজ্যাকশন আইডির স্ক্রিনশট রাখুন"
   }
 }
-

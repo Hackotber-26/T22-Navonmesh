@@ -127,7 +127,20 @@ class URLAnalyzer:
         self._load_default_threat_signatures()
 
     def _load_default_threat_signatures(self):
-        """Seed initial high-risk phishing signatures and honeypot patterns."""
+        """Seed initial high-risk phishing signatures and load threat_feeds.json if present."""
+        import os, json
+        data_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/threat_feeds.json"))
+        if os.path.exists(data_file):
+            try:
+                with open(data_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    for dom in data.get("domains", []):
+                        self.blocklist_domains.add(dom.lower())
+                    for h in data.get("hashes", []):
+                        self.blocklist_hashes.add(h)
+            except Exception:
+                pass
+
         sample_malicious = [
             "sbi-kyc-update.xyz",
             "hdfc-netbanking-login.top",

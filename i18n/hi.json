@@ -2,7 +2,8 @@
   "meta": {
     "language": "hi",
     "name": "हिन्दी",
-    "reviewed": true
+    "reviewed": true,
+    "engine": "Curated Indic Templates"
   },
   "app": {
     "title": "स्कैमशील्ड इंडिया",
@@ -130,4 +131,3 @@
     "SAVE_EVIDENCE": "सबूत के तौर पर मैसेज, लिंक और ट्रांजेक्शन नंबर का स्क्रीनशॉट लेकर रखें"
   }
 }
-

@@ -2,7 +2,8 @@
   "meta": {
     "language": "kn",
     "name": "ಕನ್ನಡ",
-    "reviewed": false
+    "reviewed": false,
+    "engine": "Curated Indic Templates"
   },
   "app": {
     "title": "ಸ್ಕ್ಯಾಮ್‌ಶೀಲ್ಡ್ ಇಂಡಿಯಾ",

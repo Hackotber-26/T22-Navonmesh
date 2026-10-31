@@ -2,7 +2,8 @@
   "meta": {
     "language": "mr",
     "name": "मराठी",
-    "reviewed": false
+    "reviewed": false,
+    "engine": "Curated Indic Templates"
   },
   "app": {
     "title": "स्कॅमशील्ड इंडिया",
@@ -130,4 +131,3 @@
     "SAVE_EVIDENCE": "पुरावा म्हणून मेसेज आणि व्यवहाराचा स्क्रीनशॉट घ्या"
   }
 }
-
