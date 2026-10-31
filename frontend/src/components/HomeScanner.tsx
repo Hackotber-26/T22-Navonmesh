@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useI18n } from "../i18n/context";
 import { VerdictBanner, AnalyzeResult } from "./VerdictBanner";
+import { ActionStateSelector, UserActionState } from "./ActionStateSelector";
+import { ActionChecklist } from "./ActionChecklist";
 import {
   Clipboard,
   QrCode,
@@ -22,8 +24,11 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
   const { t, language } = useI18n();
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [stateLoading, setStateLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
+  const [userActionState, setUserActionState] = useState<UserActionState>("not_acted");
+  const [actionCodes, setActionCodes] = useState<string[]>([]);
   const [shareReceived, setShareReceived] = useState<boolean>(false);
 
   // 1. Detect Web Share Target query params on mount
@@ -63,6 +68,8 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     setResult(null);
     setError(null);
     setShareReceived(false);
+    setUserActionState("not_acted");
+    setActionCodes([]);
     if (onReset) onReset();
   };
 
@@ -79,7 +86,12 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
 
     // Determine input type heuristic
     let inputType: "text" | "url" | "qr" = "text";
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.includes(".xyz") || trimmed.includes(".top")) {
+    if (
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.includes(".xyz") ||
+      trimmed.includes(".top")
+    ) {
       inputType = "url";
     }
 
@@ -104,6 +116,9 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
 
       const data: AnalyzeResult = await response.json();
       setResult(data);
+      setUserActionState("not_acted");
+      setActionCodes(data.action_codes || []);
+
       if (onAnalyzeComplete) {
         onAnalyzeComplete(data);
       }
@@ -114,6 +129,33 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     }
   };
 
+  // 5. Handle user state transition ("What did you do?")
+  const handleActionStateChange = async (newState: UserActionState) => {
+    setUserActionState(newState);
+
+    if (!result?.incident_id) return;
+
+    setStateLoading(true);
+    try {
+      const res = await fetch(`/api/incidents/${result.incident_id}/action-state`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_action_state: newState }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.action_codes) {
+          setActionCodes(data.action_codes);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update action state", err);
+    } finally {
+      setStateLoading(false);
+    }
+  };
+
   return (
     <div className="w-full space-y-6">
       {/* Web Share Notification Banner */}
@@ -121,7 +163,10 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
         <div className="bg-indigo-950/80 border-2 border-indigo-500 rounded-xl p-3.5 flex items-center gap-3 text-indigo-200 animate-fadeIn">
           <Share2 className="w-5 h-5 text-indigo-400 shrink-0" />
           <span className="text-sm font-semibold">
-            {t("home.shareReceivedBanner", "Message received via Share. Tap 'Check for Scam' to inspect.")}
+            {t(
+              "home.shareReceivedBanner",
+              "Message received via Share. Tap 'Check for Scam' to inspect."
+            )}
           </span>
         </div>
       )}
@@ -206,7 +251,29 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
       </div>
 
       {/* Result Verdict Card */}
-      {result && <VerdictBanner result={result} />}
+      {result && (
+        <div className="space-y-6 animate-fadeIn">
+          <VerdictBanner result={result} />
+
+          {/* "What did you do?" 3-Button Step */}
+          <ActionStateSelector
+            currentState={userActionState}
+            onStateChange={handleActionStateChange}
+            isLoading={stateLoading}
+          />
+
+          {/* Ordered Action Checklist & 1930 / WhatsApp helpers */}
+          <ActionChecklist
+            incidentId={result.incident_id}
+            category={result.category}
+            riskLevel={result.risk_level}
+            actionCodes={actionCodes.length > 0 ? actionCodes : result.action_codes}
+            userActionState={userActionState}
+            extractedDomains={result.extracted_domains}
+            reasonCodes={result.reason_codes}
+          />
+        </div>
+      )}
     </div>
   );
 }

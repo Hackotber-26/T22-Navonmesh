@@ -205,3 +205,4 @@ export function VerdictBanner({ result }: VerdictBannerProps) {
     </div>
   );
 }
+
