@@ -644,6 +644,8 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
             userActionState={userActionState}
             extractedDomains={result.extracted_domains}
             reasonCodes={result.reason_codes}
+            content={content}
+            inputType={lastInputType}
           />
         </div>
       )}

@@ -80,7 +80,15 @@
     "copyComplaint": "Copy Complaint Summary",
     "copied": "Copied to clipboard!",
     "shareFamily": "Warn Family on WhatsApp",
-    "callBank": "Call Bank Support"
+    "callBank": "Call Bank Support",
+    "downloadComplaint": "Download Complaint",
+    "urgentResponseMode": "Urgent Response Mode",
+    "goldenHourHeading": "Golden Hour: Dial 1930 Immediately",
+    "goldenHourDesc": "National Cyber Crime Helpline can freeze the scammer's bank account within the first 2 hours!",
+    "call1930Now": "Call 1930 Now",
+    "step": "Step",
+    "topPriority": "Top Priority",
+    "viewConfirmation": "I Have Completed These Steps -> View Confirmation"
   },
   "categories": {
     "UPI_COLLECT_FRAUD": "Fake UPI Collect Fraud",
@@ -91,7 +99,13 @@
     "LOTTERY_PRIZE": "Fake Lottery / Prize Scam",
     "JOB_SCAM": "Work-From-Home Job Trap",
     "MALICIOUS_QR": "Malicious Payment QR Code",
-    "OTHER": "Suspicious Message"
+    "OTHER": "Suspicious Message",
+    "SAFE_APK": "Verified Safe APK",
+    "SUSPICIOUS_APK": "Suspicious APK Package",
+    "HIGH_RISK_APK": "High Risk Unknown APK",
+    "PREDATORY_LOAN_APP": "Predatory Loan Shark App",
+    "FAKE_BANK_APK": "Fake Banking Trojan APK",
+    "MALICIOUS_BANKING_TROJAN": "Malicious Banking Trojan"
   },
   "reasons": {
     "URGENCY": "Creates false urgency (e.g. 'immediately', 'within 24 hours')",
@@ -127,6 +141,196 @@
     "REPORT_PORTAL": "File an official complaint at https://cybercrime.gov.in",
     "REPORT_SANCHAR_SAATHI": "Report the fraudulent SMS on Sanchar Saathi (Chakshu)",
     "REPORT_IN_APP": "Report and block the sender directly in WhatsApp or your SMS app",
-    "SAVE_EVIDENCE": "Take screenshots of the message, link, and transaction ID as proof"
+    "SAVE_EVIDENCE": "Take screenshots of the message, link, and transaction ID as proof",
+    "UNINSTALL_APK_IMMEDIATELY": "Immediately uninstall and delete this APK package",
+    "REVOKE_ACCESSIBILITY_PERMISSIONS": "Revoke Android Accessibility and Notification listener permissions",
+    "ALERT_FAMILY_AND_CONTACTS": "Alert your contacts that you may be targeted by predatory shaming tactics",
+    "VERIFY_OFFICIAL_STORE": "Only install verified apps directly from the Google Play Store",
+    "CHECK_APP_PERMISSIONS": "Review installed app permissions under Android Settings"
+  },
+  "apk": {
+    "titleDanger": "DANGER: HIGH RISK / MALICIOUS APK",
+    "titleCaution": "SUSPICIOUS APK FILE",
+    "titleSafe": "VERIFIED SAFE APK",
+    "packageIdentifier": "Package Identifier",
+    "riskScore": "Risk Score",
+    "dangerousPermissions": "Dangerous Android Permissions Detected",
+    "highThreat": "High Threat",
+    "permissionsExpl": "These permissions are requested in the APK's manifest and can be abused to steal banking credentials, intercept OTPs, or access personal data without your awareness:",
+    "howScammersAbuse": "How Scammers Abuse It:",
+    "finePrintLoopholes": "Fine Print Loopholes & Predatory Clauses",
+    "trapAlert": "Trap Alert",
+    "loopholesExpl": "We extracted and analyzed the legal terms and privacy strings inside this APK. The following loopholes and predatory clauses were found that can exploit users under Indian law:",
+    "exactExcerpt": "Exact Excerpt Extracted from APK:",
+    "whatToDoNow": "What should you do right now?",
+    "step1Title": "Do NOT Install / Immediately Uninstall",
+    "step1Desc": "If already installed, turn off Wi-Fi/Mobile Data, go to Settings -> Apps and uninstall this application immediately.",
+    "step2Title": "Revoke Accessibility & Notification Access",
+    "step2Desc": "Check Settings -> Accessibility on Android to ensure this app does not have background control of your screen.",
+    "step3Title": "Check Bank & UPI Transaction History",
+    "step3Desc": "Log in to your bank app directly to verify no unauthorized debit or collect requests occurred.",
+    "step4Title": "Call 1930 Cybercrime Helpline if Debited",
+    "step4Desc": "Dial 1930 immediately to freeze fraudulent transfers within the golden hour.",
+    "warnFamily": "Warn Family on WhatsApp",
+    "copiedWarning": "Copied Warning!",
+    "finishedSteps": "I Finished These Steps",
+    "summary": {
+      "critical": "DANGER: This APK exhibits severe malware indicators or predatory loan shark entrapment clauses. Do NOT install.",
+      "high": "HIGH RISK: This APK requests invasive device permissions and embeds suspicious fine print terms. Avoid installation.",
+      "medium": "CAUTION: This APK contains unverified permission requests. Proceed with extreme caution.",
+      "low": "SAFE: No malicious banking trojan signatures or exploitative fine print loopholes were detected."
+    },
+    "permissions": {
+      "BIND_ACCESSIBILITY_SERVICE": {
+        "name": "Accessibility Service (Keylogger & Remote Control)",
+        "description": "Can read everything on your screen, record keystrokes, and automatically click buttons.",
+        "abuse_scenario": "Scammers and banking trojans use this to steal your UPI PIN and Netbanking passwords as you type them."
+      },
+      "RECEIVE_SMS": {
+        "name": "Receive SMS (OTP Interception)",
+        "description": "Allows the app to intercept incoming SMS messages before you even see them.",
+        "abuse_scenario": "Fraudulent banking APKs use this to secretly intercept your bank OTP and authorize unauthorized money transfers."
+      },
+      "READ_SMS": {
+        "name": "Read SMS Messages",
+        "description": "Can read all your personal and banking SMS messages.",
+        "abuse_scenario": "Used to monitor your bank balances, UPI transaction alerts, and private verification codes."
+      },
+      "SEND_SMS": {
+        "name": "Send SMS in Background",
+        "description": "Can send outgoing SMS from your SIM card without prompting you.",
+        "abuse_scenario": "Used to send paid premium SMS or register your phone number on malicious services."
+      },
+      "SYSTEM_ALERT_WINDOW": {
+        "name": "Display Over Other Apps (Fake Screen Overlay)",
+        "description": "Can draw fake windows and login screens on top of genuine apps.",
+        "abuse_scenario": "Draws a realistic fake State Bank of India or UPI login screen over your genuine app to harvest your credentials."
+      },
+      "READ_CONTACTS": {
+        "name": "Read Full Contacts List",
+        "description": "Uploads all your friends, family, and colleagues' phone numbers to remote servers.",
+        "abuse_scenario": "Rogue instant loan apps use this to blackmail you by calling and threatening your family members."
+      },
+      "READ_CALL_LOG": {
+        "name": "Read Call Logs",
+        "description": "Monitors who you speak with and how often.",
+        "abuse_scenario": "Used by predatory loan collectors to map out your closest friends and relatives for harassment."
+      },
+      "REQUEST_INSTALL_PACKAGES": {
+        "name": "Install Other Unknown APKs (Dropper)",
+        "description": "Can download and install secondary malware packages in the background.",
+        "abuse_scenario": "Acts as a Trojan dropper that pulls in additional spy tools or spyware without your consent."
+      },
+      "RECORD_AUDIO": {
+        "name": "Record Audio / Microphone",
+        "description": "Can activate the microphone to listen in on surrounding conversations.",
+        "abuse_scenario": "Used for unauthorized background eavesdropping."
+      },
+      "CAMERA": {
+        "name": "Access Camera",
+        "description": "Can capture photos and video.",
+        "abuse_scenario": "Can take background snapshots without triggering visible camera previews."
+      }
+    },
+    "loopholes": {
+      "CONTACT_HARASSMENT": {
+        "title": "Contact List Harassment & Third-Party Shaming Loophole",
+        "explanation": "The fine print claims you authorize the lender to contact everyone in your phonebook, including your relatives and employer, to publicly shame you and demand debt recovery."
+      },
+      "HIDDEN_FEES": {
+        "title": "Unilateral Hidden Processing Fees & Auto-Debit Trap",
+        "explanation": "Contains clauses permitting arbitrary daily interest rates (up to 300% APR), hidden processing fees deducted upfront, and recurring bank account auto-debits without separate OTP authorizations."
+      },
+      "DISPUTE_WAIVER": {
+        "title": "Banking Ombudsman & Legal Dispute Forfeiture Clause",
+        "explanation": "Attempts to strip your statutory rights to file a fraud dispute with your bank, report to the Reserve Bank of India (RBI) Banking Ombudsman, or approach Indian consumer courts."
+      },
+      "GALLERY_SCRAPING": {
+        "title": "Private Media & Gallery Scraping Clause",
+        "explanation": "The agreement states that personal photos, selfies, and stored device media may be uploaded to remote servers under the guise of 'credit score evaluation' or 'identity verification'."
+      },
+      "DATA_SALE": {
+        "title": "Sale of Personal & Financial Data to Recovery Firms",
+        "explanation": "Permits the unrestricted sale and monetization of your banking SMS history, phonebook, and identity documents to unregulated third-party collection agencies."
+      }
+    }
+  },
+  "contentAdvice": {
+    "diagnosticHeading": "Contextual Incident Diagnosis",
+    "diagnosticSub": "Detected specific scam indicators and entities from your uploaded content",
+    "detectedPhone": "Flagged Contact Number in Message",
+    "detectedPhoneDesc": "Do NOT call or text this number. Scammers use unregistered SIM cards to impersonate officials.",
+    "detectedUpi": "Flagged UPI ID / VPA in Message",
+    "detectedUpiDesc": "Do NOT approve requests from or send funds to this virtual payment address.",
+    "detectedDomain": "Flagged Phishing Link / Domain",
+    "detectedDomainDesc": "This is a counterfeit web address designed to harvest credentials or install malware.",
+    "playbookHeading": "Content-Specific Action Playbook",
+    "playbookSubheading": "Custom immediate countermeasures tailored to your specific scam type",
+    "disclaimer": "These steps are specifically formulated for this threat. Follow them in sequence.",
+    "categories": {
+      "ELECTRICITY_BILL": {
+        "title": "Electricity Disconnection Phishing Trap",
+        "badge": "Utility Impersonation",
+        "tip1": "Verify your Consumer ID (CA Number) on your physical paper bill or official state DISCOM portal (e.g. BESCOM, BSES, Mahavitaran, WBSEDCL, TANGEDCO).",
+        "tip2": "State electricity boards NEVER send disconnection notices from personal 10-digit mobile numbers or collect bill dues via personal UPI.",
+        "tip3": "Never install screen-sharing apps like AnyDesk, TeamViewer, or QuickSupport if instructed by callers to 'update bill status'."
+      },
+      "FAKE_KYC": {
+        "title": "Bank Impersonation & KYC Suspension Scam",
+        "badge": "Banking Credential Theft",
+        "tip1": "Real Indian banks never send SMS with clickable links ending in .xyz, .site, or .top to update PAN or KYC.",
+        "tip2": "Never enter your NetBanking username, password, ATM PIN, or card CVV on unverified web forms.",
+        "tip3": "If you submitted details, immediately lock your NetBanking profile via your bank's app and hotlist your debit/credit card."
+      },
+      "FAKE_BANK_LINK": {
+        "title": "Counterfeit Banking Portal Detected",
+        "badge": "Phishing Website",
+        "tip1": "Examine the web address: genuine bank websites end in official domains like .bank.sbi or official .com/.co.in portals.",
+        "tip2": "Immediately freeze your netbanking access and call your bank's 24x7 emergency card-blocking helpline if credentials were submitted.",
+        "tip3": "Banks will never ask you to re-verify your debit card PIN or NetBanking credentials through external web pages."
+      },
+      "UPI_COLLECT_FRAUD": {
+        "title": "UPI Outgoing Collect / Reverse Payment Scam",
+        "badge": "Reverse Payment Trap",
+        "tip1": "UPI PIN is ONLY entered to DEBIT/SEND money from your account. You NEVER enter a PIN to receive payments or cashback.",
+        "tip2": "Open your UPI app (Google Pay / PhonePe / Paytm / BHIM) -> Go to Pending Requests -> tap DECLINE and BLOCK.",
+        "tip3": "If money was debited, call 1930 immediately to freeze the recipient bank account within the 2-hour golden period."
+      },
+      "MALICIOUS_QR": {
+        "title": "Malicious Payment QR Code Trap",
+        "badge": "Deceptive QR Payment",
+        "tip1": "QR codes in UPI are designed strictly to SEND money out. Scanning a QR code will never deposit money into your account.",
+        "tip2": "Do not scan the QR code. If already scanned, immediately cancel the transaction before entering your UPI PIN.",
+        "tip3": "If you entered your PIN and money was debited, dial 1930 and contact your bank to report the fraudulent UPI UTR."
+      },
+      "PARCEL_DELIVERY": {
+        "title": "India Post & Courier Impersonation Scam",
+        "badge": "Postal Phishing Trap",
+        "tip1": "India Post and genuine courier services never demand ₹5–₹25 redelivery fees via SMS links.",
+        "tip2": "Track your consignment only on official portals (e.g., indiapost.gov.in) using your 13-character tracking number.",
+        "tip3": "Scammers use nominal ₹10 fees to capture full 16-digit card numbers, CVVs, and OTPs for larger subsequent debits."
+      },
+      "JOB_SCAM": {
+        "title": "Part-Time Task & Prepaid Investment Fraud",
+        "badge": "Ponzi Task Trap",
+        "tip1": "No genuine company pays ₹2,000–₹5,000 daily for liking YouTube videos, rating hotels, or following social profiles.",
+        "tip2": "Never pay 'prepaid task fees', 'tax clearance', or 'VIP unlock fees' to withdraw virtual dashboard balances.",
+        "tip3": "Exit and report the Telegram / WhatsApp group immediately. Block all contact with the group admins."
+      },
+      "LOTTERY_PRIZE": {
+        "title": "KBC / Fake Prize & Lottery Extortion",
+        "badge": "Lottery Fraud",
+        "tip1": "You cannot win a lottery or prize draw you never purchased a ticket for or entered.",
+        "tip2": "Never pay advance 'GST', 'customs charges', or 'processing fees' to claim any prize.",
+        "tip3": "Ignore forged letters with RBI, Ministry of Finance, or celebrity photos—they are fabricated by cybercrime syndicates."
+      },
+      "OTHER": {
+        "title": "Suspicious Message & Urgency Alert",
+        "badge": "Social Engineering",
+        "tip1": "Scammers create artificial urgency ('account closed tonight', 'immediate action required') to prevent you from consulting family.",
+        "tip2": "Always verify unsolicited claims by independently looking up the company's official customer support number.",
+        "tip3": "Talk to your family or call 1930 if you feel pressured or doubtful about any message."
+      }
+    }
   }
 }
