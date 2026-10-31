@@ -4,10 +4,12 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n, SUPPORTED_LANGUAGES } from "../i18n/context";
-import { ShieldCheck, Globe, Type, Lock, BarChart3 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { ShieldCheck, Globe, Type, Lock, BarChart3, User as UserIcon } from "lucide-react";
 
 export function Header() {
   const { language, setShowPicker, textSize, toggleTextSize, t } = useI18n();
+  const { user, setShowAuthModal } = useAuth();
   const pathname = usePathname();
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === language);
@@ -56,6 +58,18 @@ export function Header() {
               <span className="hidden md:inline">Scanner</span>
             </Link>
           )}
+
+          {/* Account / Sign-in */}
+          <button
+            onClick={() => setShowAuthModal(true)}
+            aria-label="User Account and Scan History"
+            className="min-h-touch min-w-touch px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 font-bold text-sm shadow-sm transition-colors"
+          >
+            <UserIcon className="w-4 h-4 text-indigo-400" />
+            <span className="hidden sm:inline">
+              {user ? user.email?.split("@")[0] || "Account" : "Sign In"}
+            </span>
+          </button>
 
           {/* Text Size Accessibility Toggle */}
           <button

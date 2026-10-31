@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { Header } from "../components/Header";
 import { LanguageModal } from "../components/LanguageModal";
+import { AuthModal } from "../components/AuthModal";
 import { HomeScanner } from "../components/HomeScanner";
 import { useI18n } from "../i18n/context";
 import { Phone, Shield, ExternalLink, Heart } from "lucide-react";
@@ -27,6 +28,7 @@ export default function HomePage() {
 
       {/* Language Picker Modal for first-time launch or switching */}
       <LanguageModal />
+      <AuthModal />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 md:py-8 space-y-6">

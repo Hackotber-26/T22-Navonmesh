@@ -96,11 +96,19 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     }
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("scamshield_token");
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+      }
+
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           input_type: inputType,
           content: trimmed,

@@ -8,7 +8,9 @@ from sqlalchemy import select
 
 from backend.app.core.database import get_db
 from backend.app.core.rate_limiter import check_rate_limit
+from backend.app.core.security import get_current_user_optional
 from backend.app.models.incident import Incident
+from backend.app.models.user import User
 from backend.app.schemas.analyze import AnalyzeRequest, AnalyzeResponse, UserActionState
 from backend.app.services.detector import detector
 from backend.app.services.action_engine import action_engine
@@ -38,6 +40,7 @@ class UpdateActionStateResponse(BaseModel):
 )
 async def analyze_content(
     payload: AnalyzeRequest,
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -56,7 +59,7 @@ async def analyze_content(
     incident_id = uuid.uuid4()
     incident = Incident(
         id=incident_id,
-        user_id=None,  # Guest by default; populated when auth is attached
+        user_id=current_user.id if current_user else None,  # Guest by default; populated when auth is attached
         input_type=payload.input_type,
         category=result["category"],
         risk_level=result["risk_level"],

@@ -75,3 +75,4 @@ async def test_stats_pipeline_with_incidents():
         assert act_res.status_code == 200
         actions = act_res.json()
         assert isinstance(actions, list)
+

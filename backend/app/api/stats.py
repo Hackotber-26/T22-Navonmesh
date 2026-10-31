@@ -146,3 +146,4 @@ async def get_stats_actions(db: AsyncSession = Depends(get_db)) -> List[Dict[str
         }
         for row in rows
     ]
+

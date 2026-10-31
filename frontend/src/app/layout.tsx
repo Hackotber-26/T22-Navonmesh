@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { I18nProvider } from "../i18n/context";
+import { AuthProvider } from "../context/AuthContext";
 
 export const metadata: Metadata = {
   title: "ScamShield India - Detect Phishing, Fake UPI & SMS Scams",
@@ -32,7 +33,9 @@ export default function RootLayout({
       </head>
       <body className="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
         <I18nProvider>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </I18nProvider>
       </body>
     </html>
