@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: scamshield_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: scamshield
+      POSTGRES_PASSWORD: scamshield_pass
+      POSTGRES_DB: scamshield_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scamshield -d scamshield_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: scamshield_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: scamshield_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://scamshield:scamshield_pass@db:5432/scamshield_db
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_ENABLED=true
+      - SECRET_KEY=scamshield-hacktoberfest-demo-secret-key-32chars
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - MODEL_VERSION=indicbert-v2-scam-v1
+      - RULES_VERSION=v1.0.0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: scamshield_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_APP_NAME=ScamShield India
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+  redis_data:
