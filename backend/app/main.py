@@ -53,11 +53,24 @@ app.add_middleware(
 async def enforce_payload_limit(request: Request, call_next):
     """Enforce input size cap for privacy protection and DoS mitigation."""
     content_length = request.headers.get("content-length")
-    if content_length and int(content_length) > (settings.MAX_INPUT_CHARS * 4):  # Multi-byte UTF-8 margin
-        return JSONResponse(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-            content={"detail": f"Payload exceeds maximum allowed size of {settings.MAX_INPUT_CHARS} characters."}
-        )
+    if content_length:
+        try:
+            length_bytes = int(content_length)
+        except (ValueError, TypeError):
+            length_bytes = 0
+
+        # Dedicated 10MB limit for screenshot OCR uploads
+        if request.url.path.startswith("/api/analyze/ocr"):
+            if length_bytes > settings.MAX_IMAGE_UPLOAD_BYTES:
+                return JSONResponse(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    content={"detail": "Image size exceeds 10MB limit."}
+                )
+        elif length_bytes > (settings.MAX_INPUT_CHARS * 4):  # Multi-byte UTF-8 margin for text/JSON
+            return JSONResponse(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                content={"detail": f"Payload exceeds maximum allowed size of {settings.MAX_INPUT_CHARS} characters."}
+            )
     return await call_next(request)
 
 

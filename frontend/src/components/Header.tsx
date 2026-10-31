@@ -18,14 +18,22 @@ export function Header() {
   return (
     <header className="w-full bg-slate-900/90 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* App Title & Shield */}
+        {/* App Title & Logo (Brand name and logo remain fixed across all languages) */}
         <Link href="/" className="flex items-center space-x-3 group">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-            <ShieldCheck className="w-7 h-7" />
+          <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-800 border border-slate-700 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+            <img
+              src="/logo.png"
+              alt="ScamShield India Logo"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Graceful fallback if image fails to render
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              {t("app.title", "ScamShield India")}
+              ScamShield India
             </h1>
             <span className="hidden sm:inline-flex items-center gap-1 text-xs text-emerald-400 font-medium">
               <Lock className="w-3 h-3" />

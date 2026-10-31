@@ -79,4 +79,8 @@ class AnalyzeResponse(BaseModel):
         default_factory=list,
         description="Sanitized domain names detected (excluding full paths or user queries)"
     )
+    extracted_text: Optional[str] = Field(
+        default=None,
+        description="Text extracted via OCR if input_type was screenshot"
+    )
 

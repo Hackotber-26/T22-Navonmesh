@@ -2,10 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including Tesseract OCR and Indic packs
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    tesseract-ocr \
+    tesseract-ocr-hin \
+    tesseract-ocr-ben \
+    tesseract-ocr-mar \
+    tesseract-ocr-kan \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements

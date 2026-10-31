@@ -42,34 +42,56 @@ class ScamDetector:
         # 2. Text Analysis via IndicBERT / Baseline Engine
         text_analysis = onnx_classifier.predict(sanitized_content)
 
-        # 3. Special handling for QR inputs
+        # 3. Special handling for QR inputs and UPI payment intents
         qr_reasons = []
         qr_score_boost = 0.0
-        if input_type == "qr":
-            if sanitized_content.startswith("upi://pay"):
-                qr_reasons.append("QR_LEADS_TO_PAYMENT")
-                # Scammers often trick victims into scanning QR codes to "receive money"
-                if "receive" in sanitized_content.lower() or "credit" in sanitized_content.lower():
-                    qr_reasons.append("ENTER_PIN_TO_RECEIVE")
-                    qr_score_boost = 0.80
-                else:
-                    qr_score_boost = 0.40
+
+        lower_content = sanitized_content.lower()
+        is_upi_intent = (
+            lower_content.startswith("upi://") or
+            "upi://pay" in lower_content or
+            ("pa=" in lower_content and "@" in lower_content)
+        )
+
+        if is_upi_intent:
+            qr_reasons.append("QR_LEADS_TO_PAYMENT")
+            # Scammers often trick victims into scanning QR codes to "receive money", "claim prize", etc.
+            scam_payment_keywords = [
+                "receive", "credit", "cashback", "prize", "reward", "refund",
+                "claim", "lottery", "winner", "free", "gift", "bonus", "approval",
+                "kyc", "verification", "electricity", "cutoff", "bill"
+            ]
+            has_deceptive_context = any(k in lower_content for k in scam_payment_keywords)
+            if has_deceptive_context:
+                qr_reasons.append("ENTER_PIN_TO_RECEIVE")
+                qr_reasons.append("UPI_COLLECT_REQUEST")
+                qr_score_boost = 0.88  # Critical fraud
+            else:
+                # Any UPI payment QR code from an unknown source will debit money!
+                qr_reasons.append("ENTER_PIN_TO_RECEIVE")
+                qr_score_boost = 0.65  # High risk: warn user that money will be deducted
+
+        elif input_type == "qr":
+            # Decoded QR code contains a URL or other payload
+            if url_analysis["has_urls"]:
+                has_allowlist = any(d.get("is_allowlisted") for d in url_analysis.get("domain_results", []))
+                if not has_allowlist:
+                    if "pay" in lower_content:
+                        qr_reasons.append("QR_LEADS_TO_PAYMENT")
+                    if "SHORTENED_URL" in url_analysis["reasons"] or "SUSPICIOUS_TLD" in url_analysis["reasons"]:
+                        qr_score_boost = max(qr_score_boost, 0.75)
+                    else:
+                        qr_score_boost = max(qr_score_boost, 0.55)  # Caution for unverified QR URLs
 
         # 4. Signal Fusion & Risk Scoring
         url_score = url_analysis["max_url_score"]
         text_score = text_analysis["score"]
 
-        # If a harmful lookalike or blocklist domain is present, ensure verdict is high/critical
-        # even if text is benign or short (e.g. "Hi click here sbi-kyc-update.xyz")
-        if url_score >= 0.70:
-            if text_score > 0.50:
-                # Compound risk: both suspicious text and malicious link
-                combined_score = min(1.0, max(url_score, text_score) + 0.08)
-            else:
-                combined_score = url_score
+        # Signal fusion: highest indicator + compound boost when multiple threats align
+        if url_score > 0.40 and text_score > 0.40:
+            combined_score = min(1.0, max(url_score, text_score) + 0.10)
         else:
-            # Predominantly text-driven or low-risk URL
-            combined_score = text_score
+            combined_score = max(url_score, text_score)
 
         if qr_score_boost > 0:
             combined_score = max(combined_score, qr_score_boost)
@@ -86,12 +108,19 @@ class ScamDetector:
 
         # 5. Determine Primary Category
         primary_category = text_analysis["category"]
-        if primary_category == "OTHER":
+        if risk_level == "low":
+            primary_category = "OTHER"
+        elif is_upi_intent:
+            if "ENTER_PIN_TO_RECEIVE" in qr_reasons or "UPI_COLLECT_REQUEST" in qr_reasons:
+                primary_category = "UPI_COLLECT_FRAUD"
+            else:
+                primary_category = "MALICIOUS_QR"
+        elif primary_category == "OTHER":
             if "FAKE_BANK_DOMAIN" in url_analysis["reasons"]:
                 primary_category = "FAKE_BANK_LINK"
-            elif "QR_LEADS_TO_PAYMENT" in qr_reasons:
+            elif input_type == "qr" or "QR_LEADS_TO_PAYMENT" in qr_reasons:
                 primary_category = "MALICIOUS_QR"
-            elif url_score >= 0.70:
+            elif url_score >= 0.60:
                 primary_category = "FAKE_BANK_LINK"
 
         # If text explicitly mentions KYC alongside a fake bank link

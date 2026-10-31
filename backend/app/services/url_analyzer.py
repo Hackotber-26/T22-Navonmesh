@@ -241,14 +241,14 @@ class URLAnalyzer:
         # 3. Shortener check
         if dom in SHORTENERS:
             reasons.append("SHORTENED_URL")
-            score = max(score, 0.45)
+            score = max(score, 0.65)
 
         # 4. TLD check
         parts = dom.split(".")
         tld = parts[-1] if len(parts) > 1 else ""
         if tld in SUSPICIOUS_TLDS:
             reasons.append("SUSPICIOUS_TLD")
-            score = max(score, 0.55)
+            score = max(score, 0.68)
 
         # 5. IP Address or Punycode in host
         if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', dom):
@@ -336,6 +336,33 @@ class URLAnalyzer:
             if dom and dom not in domains_list:
                 domains_list.append(dom)
                 analysis = self.analyze_domain(dom)
+
+                # Check entire URL path/query for phishing or target brand keywords
+                if not analysis["is_allowlisted"]:
+                    item_lower = item.lower()
+                    # Check for bank brand mentions anywhere in the URL (e.g. tinyurl.com/sbi-verify)
+                    bank_brands = {"sbi", "onlinesbi", "statebank", "hdfc", "hdfcbank", "icici", "axis", "pnb", "kotak", "canara"}
+                    phishing_keywords = {
+                        "kyc", "pan", "aadhaar", "aadhar", "block", "unblock", "verify",
+                        "verification", "cashback", "reward", "rewards", "prize", "gift",
+                        "lottery", "claim", "free", "bonus", "refund", "cutoff", "electricity",
+                        "bijli", "bill", "payme", "quickpay"
+                    }
+
+                    has_bank = any(b in item_lower for b in bank_brands)
+                    has_phish = any(p in item_lower for p in phishing_keywords)
+
+                    if has_bank:
+                        if "FAKE_BANK_DOMAIN" not in analysis["reasons"]:
+                            analysis["reasons"].append("FAKE_BANK_DOMAIN")
+                        if "LOOKALIKE_DOMAIN" not in analysis["reasons"]:
+                            analysis["reasons"].append("LOOKALIKE_DOMAIN")
+                        analysis["score"] = max(analysis["score"], 0.88)
+                    elif has_phish:
+                        if "LOOKALIKE_DOMAIN" not in analysis["reasons"]:
+                            analysis["reasons"].append("LOOKALIKE_DOMAIN")
+                        analysis["score"] = max(analysis["score"], 0.75)
+
                 domain_results.append(analysis)
                 if analysis["score"] > max_score:
                     max_score = analysis["score"]

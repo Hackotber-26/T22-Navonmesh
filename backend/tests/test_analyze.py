@@ -235,3 +235,30 @@ async def test_qr_payment_trap():
         assert "QR_LEADS_TO_PAYMENT" in data["reason_codes"]
         assert "ENTER_PIN_TO_RECEIVE" in data["reason_codes"]
         assert "NO_PIN_TO_RECEIVE" in data["action_codes"]
+
+
+@pytest.mark.asyncio
+async def test_screenshot_ocr_endpoint():
+    """Verify screenshot OCR endpoint extracts text and evaluates threats without storing images."""
+    import io
+    from PIL import Image
+
+    # Create dummy white image in memory
+    img = Image.new("RGB", (150, 60), color="white")
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format="PNG")
+    img_bytes = img_byte_arr.getvalue()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/analyze/ocr",
+            files={"file": ("screenshot.png", img_bytes, "image/png")},
+            data={"language": "hi"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "risk_score" in data
+        assert "category" in data
+        assert "extracted_text" in data
+        assert len(data["extracted_text"]) > 0

@@ -14,6 +14,7 @@ import {
   CheckSquare,
   Square,
   Building2,
+  Download,
 } from "lucide-react";
 
 interface ActionChecklistProps {
@@ -79,6 +80,17 @@ Note: This summary is prepared for submission to the National Cyber Crime Portal
     } catch (err) {
       console.error("Clipboard copy failed", err);
     }
+  };
+
+  const handleDownloadComplaint = () => {
+    const summary = generateComplaintSummary();
+    const blob = new Blob([summary], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `cybercrime_complaint_${incidentId?.slice(0, 8) || "summary"}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   // Build WhatsApp family warning share link
@@ -181,6 +193,16 @@ Note: This summary is prepared for submission to the National Cyber Crime Portal
               <span>{t("checklist.copyComplaint", "Copy Complaint")}</span>
             </>
           )}
+        </button>
+
+        {/* 3b. Download Formal Complaint */}
+        <button
+          onClick={handleDownloadComplaint}
+          title="Download formal text complaint for cybercrime portal"
+          className="min-h-touch p-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-white font-bold flex items-center justify-center gap-2 text-sm md:text-base transition-colors shadow-sm"
+        >
+          <Download className="w-5 h-5 text-indigo-400" />
+          <span>Download Complaint</span>
         </button>
 
         {/* 4. Share with Family on WhatsApp */}

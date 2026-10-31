@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useI18n } from "../i18n/context";
 import { VerdictBanner, AnalyzeResult } from "./VerdictBanner";
 import { ActionStateSelector, UserActionState } from "./ActionStateSelector";
@@ -14,6 +14,8 @@ import {
   Share2,
   AlertCircle,
   Loader2,
+  CheckCircle2,
+  Image as ImageIcon,
 } from "lucide-react";
 
 interface HomeScannerProps {
@@ -32,6 +34,11 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
   const [actionCodes, setActionCodes] = useState<string[]>([]);
   const [shareReceived, setShareReceived] = useState<boolean>(false);
   const [showQRModal, setShowQRModal] = useState<boolean>(false);
+  const [ocrLoading, setOcrLoading] = useState<boolean>(false);
+  const [ocrProgress, setOcrProgress] = useState<string>("");
+  const [ocrSuccessNotice, setOcrSuccessNotice] = useState<string | null>(null);
+  const [lastInputType, setLastInputType] = useState<"text" | "url" | "qr">("text");
+  const screenshotInputRef = useRef<HTMLInputElement | null>(null);
 
   // 1. Detect Web Share Target query params on mount
   useEffect(() => {
@@ -54,6 +61,7 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
         if (text) {
           setContent(text);
           setError(null);
+          setOcrSuccessNotice(null);
         }
       } else {
         setError("Clipboard access not available. Please paste manually into the box.");
@@ -69,8 +77,12 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     setResult(null);
     setError(null);
     setShareReceived(false);
+    setOcrSuccessNotice(null);
+    setOcrProgress("");
+    setOcrLoading(false);
     setUserActionState("not_acted");
     setActionCodes([]);
+    setLastInputType("text");
     if (onReset) onReset();
   };
 
@@ -84,17 +96,25 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
 
     setLoading(true);
     setError(null);
+    setOcrSuccessNotice(null);
 
-    let inputType: "text" | "url" | "qr" = explicitInputType || "text";
+    let inputType: "text" | "url" | "qr" = explicitInputType || lastInputType || "text";
     if (!explicitInputType) {
       if (
         trimmed.startsWith("http://") ||
         trimmed.startsWith("https://") ||
+        trimmed.startsWith("www.") ||
         trimmed.includes(".xyz") ||
-        trimmed.includes(".top")
+        trimmed.includes(".top") ||
+        trimmed.includes(".click") ||
+        trimmed.includes(".site")
       ) {
         inputType = "url";
-      } else if (trimmed.startsWith("upi://")) {
+      } else if (
+        trimmed.startsWith("upi://") ||
+        trimmed.includes("upi://pay") ||
+        (trimmed.includes("pa=") && trimmed.includes("@"))
+      ) {
         inputType = "qr";
       }
     }
@@ -144,10 +164,103 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
   // 5. Handle QR scan callback
   const handleQRScan = (decodedText: string) => {
     setContent(decodedText);
+    setLastInputType("qr");
+    setOcrSuccessNotice(null);
     executeAnalyze(decodedText, "qr");
   };
 
-  // 6. Handle user state transition ("What did you do?")
+  // 6. Handle Screenshot OCR upload with in-browser WebAssembly reading
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image size exceeds 10MB limit. Please choose a smaller screenshot.");
+      if (screenshotInputRef.current) {
+        screenshotInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setOcrLoading(true);
+    setOcrProgress("Preparing OCR engine...");
+    setError(null);
+    setOcrSuccessNotice(null);
+    setResult(null); // Ensure verdict is hidden until user clicks "Check for Scam"
+
+    try {
+      // Dynamic import of tesseract.js WebAssembly
+      const Tesseract = (await import("tesseract.js")).default;
+
+      setOcrProgress("Reading text from screenshot... 0%");
+      const ocrResult = await Tesseract.recognize(
+        file,
+        "eng",
+        {
+          logger: (m) => {
+            if (m.status === "recognizing text") {
+              const pct = Math.round((m.progress || 0) * 100);
+              setOcrProgress(`Reading text from screenshot... ${pct}%`);
+            } else if (m.status) {
+              setOcrProgress(`${m.status.replace(/_/g, " ")}...`);
+            }
+          },
+        }
+      );
+
+      const extractedText = ocrResult?.data?.text?.trim() || "";
+
+      if (!extractedText || extractedText.length < 3) {
+        throw new Error(
+          "Could not detect clear text in this screenshot. Please ensure the image is clear or type the message above."
+        );
+      }
+
+      // Populate input box with genuine extracted text
+      setContent(extractedText);
+      setLastInputType("text");
+      setOcrSuccessNotice(
+        "Screenshot text extracted! Review the message in the box below, then tap 'Check for Scam' to analyze."
+      );
+    } catch (err: any) {
+      console.warn("Client OCR failed or fallback required:", err);
+      // Fallback: try backend API endpoint
+      try {
+        setOcrProgress("Verifying text with server...");
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("language", language);
+
+        const response = await fetch("/api/analyze/ocr", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.extracted_text) {
+            setContent(data.extracted_text);
+            setLastInputType("text");
+            setOcrSuccessNotice(
+              "Screenshot text extracted! Review the message in the box below, then tap 'Check for Scam' to analyze."
+            );
+            return;
+          }
+        }
+      } catch (fallbackErr) {
+        // Fallback also failed
+      }
+      setError(err.message || "Failed to read text from screenshot. Please try pasting the text directly.");
+    } finally {
+      setOcrLoading(false);
+      setOcrProgress("");
+      if (screenshotInputRef.current) {
+        screenshotInputRef.current.value = "";
+      }
+    }
+  };
+
+  // 7. Handle user state transition ("What did you do?")
   const handleActionStateChange = async (newState: UserActionState) => {
     setUserActionState(newState);
 
@@ -237,6 +350,23 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
               <span>{t("home.scanQrButton", "Scan QR Code")}</span>
             </button>
 
+            {/* Screenshot OCR Upload */}
+            <input
+              ref={screenshotInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleScreenshotUpload}
+            />
+            <button
+              onClick={() => screenshotInputRef.current?.click()}
+              type="button"
+              className="min-h-touch px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm"
+            >
+              <ImageIcon className="w-4 h-4 text-amber-400" />
+              <span>Upload Screenshot</span>
+            </button>
+
             {content && (
               <button
                 onClick={handleClear}
@@ -250,6 +380,27 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
           </div>
         </div>
 
+        {/* OCR In-Progress Status Card */}
+        {ocrLoading && (
+          <div className="mt-3.5 p-4 rounded-xl bg-indigo-950/90 border-2 border-indigo-500/80 text-indigo-100 flex items-center gap-3 animate-pulse">
+            <Loader2 className="w-6 h-6 animate-spin text-indigo-400 shrink-0" />
+            <div>
+              <p className="font-bold text-sm md:text-base">Reading Screenshot with AI OCR...</p>
+              <p className="text-xs text-indigo-300 font-mono mt-0.5">{ocrProgress}</p>
+            </div>
+          </div>
+        )}
+
+        {/* OCR Success Banner */}
+        {ocrSuccessNotice && (
+          <div className="mt-3.5 p-4 rounded-xl bg-emerald-950/80 border-2 border-emerald-500 text-emerald-200 flex items-center gap-3 animate-fadeIn">
+            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
+            <div className="text-sm font-semibold">
+              <p>{ocrSuccessNotice}</p>
+            </div>
+          </div>
+        )}
+
         {/* Error Notice */}
         {error && (
           <div className="mt-3.5 p-3 rounded-xl bg-red-950/80 border border-red-500 text-red-200 flex items-center gap-2 text-sm font-medium">
@@ -261,11 +412,16 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
         {/* Big Touch-Target Scan Button */}
         <div className="mt-5">
           <button
-            onClick={() => executeAnalyze(content)}
-            disabled={loading || !content.trim()}
+            onClick={() => {
+              setOcrSuccessNotice(null);
+              executeAnalyze(content, lastInputType);
+            }}
+            disabled={loading || ocrLoading || !content.trim()}
             className={`w-full min-h-[56px] py-3.5 px-6 rounded-2xl font-black text-lg md:text-xl flex items-center justify-center gap-3 transition-all shadow-lg ${
-              loading || !content.trim()
+              loading || ocrLoading || !content.trim()
                 ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                : ocrSuccessNotice
+                ? "bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white shadow-emerald-900/40 ring-4 ring-emerald-500/50 active:scale-[0.99] animate-pulse"
                 : "bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white shadow-emerald-900/30 active:scale-[0.99]"
             }`}
           >
@@ -273,6 +429,11 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
               <>
                 <Loader2 className="w-6 h-6 animate-spin text-white" />
                 <span>{t("home.analyzing", "Analyzing for threats...")}</span>
+              </>
+            ) : ocrLoading ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+                <span>Reading Screenshot...</span>
               </>
             ) : (
               <>

@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # Security & limits
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
     MAX_INPUT_CHARS: int = 5000
+    MAX_IMAGE_UPLOAD_BYTES: int = 10 * 1024 * 1024  # 10MB for OCR screenshot uploads
     RATE_LIMIT_PER_MINUTE: int = 60
 
     @property

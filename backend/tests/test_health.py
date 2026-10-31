@@ -30,7 +30,7 @@ async def test_health_endpoint():
 @pytest.mark.asyncio
 async def test_payload_limit_middleware():
     transport = ASGITransport(app=app)
-    # Huge payload above MAX_INPUT_CHARS * 4
+    # Huge payload above MAX_INPUT_CHARS * 4 on standard route
     huge_body = "A" * 25000
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post(
@@ -39,4 +39,15 @@ async def test_payload_limit_middleware():
             headers={"Content-Length": str(len(huge_body))}
         )
         assert response.status_code == 413
+        assert "Payload exceeds maximum allowed size" in response.json()["detail"]
+
+        # Massive image exceeding 10MB limit on /api/analyze/ocr
+        excessive_image_bytes = 11 * 1024 * 1024
+        response_ocr_oversize = await client.post(
+            "/api/analyze/ocr",
+            content=b"",
+            headers={"Content-Length": str(excessive_image_bytes)}
+        )
+        assert response_ocr_oversize.status_code == 413
+        assert "Image size exceeds 10MB limit" in response_ocr_oversize.json()["detail"]
 
