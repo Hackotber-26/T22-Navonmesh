@@ -50,3 +50,4 @@ async def health_check(db: AsyncSession = Depends(get_db)):
             },
         }
     )
+

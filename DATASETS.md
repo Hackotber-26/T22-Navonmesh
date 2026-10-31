@@ -48,3 +48,4 @@ To address Indian scam vectors (UPI collect fraud, electricity disconnection thr
   - `MALICIOUS_QR`
   - `OTHER`
 - **Negative Control Set:** Hundreds of authentic bank transaction alerts, telecom expiry reminders, courier dispatch notices, and two-factor authentication (OTP) messages to rigorously minimize false positive rates.
+

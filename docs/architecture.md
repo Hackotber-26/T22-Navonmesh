@@ -49,3 +49,4 @@ flowchart TD
    Safety-critical action advice is generated via pre-vetted rules (`actions.yaml`), completely bypassing LLMs to guarantee zero hallucinations during stressful fraud incidents.
 3. **Bandwidth & Latency Optimization for Low-End Devices:**
    Instead of dynamically streaming audio via heavy TTS on each request, all voice warnings and advice snippets are pre-synthesized offline into static lightweight MP3 files served via CDN or static asset paths.
+

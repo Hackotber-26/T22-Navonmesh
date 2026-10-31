@@ -33,3 +33,4 @@
 | **Database ORM** | SQLAlchemy & Alembic | MIT License |
 | **Database Engine** | PostgreSQL / SQLite | PostgreSQL License / Public Domain |
 | **Caching & Rate Limiting**| Redis | BSD-3-Clause / RSALv2 / SSPL (Community CE) |
+

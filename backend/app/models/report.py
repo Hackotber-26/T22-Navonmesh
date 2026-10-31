@@ -1,26 +1,22 @@
 import uuid
 from sqlalchemy import Column, String, DateTime, ForeignKey, Index, func
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from backend.app.core.database import Base
+from backend.app.core.guid import GUID
 
 
 class Report(Base):
     __tablename__ = "reports"
 
-    id = Column(
-        PG_UUID(as_uuid=True).with_variant(String(36), "sqlite"),
-        primary_key=True,
-        default=uuid.uuid4
-    )
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     incident_id = Column(
-        PG_UUID(as_uuid=True).with_variant(String(36), "sqlite"),
+        GUID(),
         ForeignKey("incidents.id", ondelete="CASCADE"),
         nullable=False,
         index=True
     )
     user_id = Column(
-        PG_UUID(as_uuid=True).with_variant(String(36), "sqlite"),
+        GUID(),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True
@@ -34,3 +30,4 @@ class Report(Base):
     __table_args__ = (
         Index("idx_reports_created_at", "created_at"),
     )
+

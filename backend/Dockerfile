@@ -26,3 +26,4 @@ ENV PORT=8000
 
 # Start command runs migrations then starts server
 CMD ["sh", "-c", "alembic -c backend/alembic.ini upgrade head && uvicorn backend.app.main:app --host 0.0.0.0 --port 8000"]
+

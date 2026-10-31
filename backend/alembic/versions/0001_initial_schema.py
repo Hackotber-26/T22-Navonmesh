@@ -84,3 +84,4 @@ def downgrade() -> None:
     op.drop_table('reports')
     op.drop_table('incidents')
     op.drop_table('users')
+

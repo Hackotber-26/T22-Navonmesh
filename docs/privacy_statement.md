@@ -47,3 +47,4 @@ ScamShield India adheres to the principles of the **Digital Personal Data Protec
 | Reason Codes (e.g. `LOOKALIKE_DOMAIN`) | Camera images or screenshot bitmaps |
 | UI Language (`hi`, `bn`, `mr`, `kn`, `en`) | Personal Names, OTPs, or Passwords |
 | SHA-256 Hash of Domain Only | User GPS or Precise Geolocation |
+

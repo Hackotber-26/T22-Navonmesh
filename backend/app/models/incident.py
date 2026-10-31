@@ -1,20 +1,17 @@
 import uuid
 from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Index, JSON, func
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, ARRAY as PG_ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlalchemy.orm import relationship
 from backend.app.core.database import Base
+from backend.app.core.guid import GUID
 
 
 class Incident(Base):
     __tablename__ = "incidents"
 
-    id = Column(
-        PG_UUID(as_uuid=True).with_variant(String(36), "sqlite"),
-        primary_key=True,
-        default=uuid.uuid4
-    )
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        PG_UUID(as_uuid=True).with_variant(String(36), "sqlite"),
+        GUID(),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True
@@ -46,3 +43,4 @@ class Incident(Base):
         Index("idx_incidents_created_at", "created_at"),
         Index("idx_incidents_category_risk", "category", "risk_level"),
     )
+

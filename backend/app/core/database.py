@@ -45,3 +45,4 @@ async def init_db() -> None:
         # Import models so they are registered with Base.metadata
         from backend.app.models import user, incident, report  # noqa
         await conn.run_sync(Base.metadata.create_all)
+
