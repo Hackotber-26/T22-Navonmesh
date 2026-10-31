@@ -96,3 +96,4 @@ async def test_guest_mode_and_authenticated_scan_history():
         empty_hist = await client.get("/api/users/me/history", headers=auth_headers)
         assert empty_hist.status_code == 200
         assert len(empty_hist.json()) == 0
+

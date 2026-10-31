@@ -182,3 +182,4 @@ async def delete_my_scan_history(
     await db.execute(stmt)
     await db.commit()
     return {"message": "All personal incident telemetry has been permanently erased."}
+

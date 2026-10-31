@@ -118,3 +118,4 @@ async def get_current_admin(
             detail="Administrator access required."
         )
     return current_user
+

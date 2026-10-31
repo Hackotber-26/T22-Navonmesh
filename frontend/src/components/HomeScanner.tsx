@@ -5,6 +5,7 @@ import { useI18n } from "../i18n/context";
 import { VerdictBanner, AnalyzeResult } from "./VerdictBanner";
 import { ActionStateSelector, UserActionState } from "./ActionStateSelector";
 import { ActionChecklist } from "./ActionChecklist";
+import { QRScannerModal } from "./QRScannerModal";
 import {
   Clipboard,
   QrCode,
@@ -30,6 +31,7 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
   const [userActionState, setUserActionState] = useState<UserActionState>("not_acted");
   const [actionCodes, setActionCodes] = useState<string[]>([]);
   const [shareReceived, setShareReceived] = useState<boolean>(false);
+  const [showQRModal, setShowQRModal] = useState<boolean>(false);
 
   // 1. Detect Web Share Target query params on mount
   useEffect(() => {
@@ -39,7 +41,6 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
       if (sharedText) {
         setContent(sharedText);
         setShareReceived(true);
-        // Clean URL to prevent re-populating on page refresh
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
@@ -73,26 +74,29 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     if (onReset) onReset();
   };
 
-  // 4. Submit scan to FastAPI backend
-  const handleAnalyze = async () => {
-    const trimmed = content.trim();
+  // 4. Central analyze routine supporting text, url, or qr
+  const executeAnalyze = async (rawContent: string, explicitInputType?: "text" | "url" | "qr") => {
+    const trimmed = rawContent.trim();
     if (!trimmed) {
-      setError("Please enter or paste a message, link, or UPI message.");
+      setError("Please enter, paste, or scan a message, link, or QR code.");
       return;
     }
 
     setLoading(true);
     setError(null);
 
-    // Determine input type heuristic
-    let inputType: "text" | "url" | "qr" = "text";
-    if (
-      trimmed.startsWith("http://") ||
-      trimmed.startsWith("https://") ||
-      trimmed.includes(".xyz") ||
-      trimmed.includes(".top")
-    ) {
-      inputType = "url";
+    let inputType: "text" | "url" | "qr" = explicitInputType || "text";
+    if (!explicitInputType) {
+      if (
+        trimmed.startsWith("http://") ||
+        trimmed.startsWith("https://") ||
+        trimmed.includes(".xyz") ||
+        trimmed.includes(".top")
+      ) {
+        inputType = "url";
+      } else if (trimmed.startsWith("upi://")) {
+        inputType = "qr";
+      }
     }
 
     try {
@@ -137,7 +141,13 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     }
   };
 
-  // 5. Handle user state transition ("What did you do?")
+  // 5. Handle QR scan callback
+  const handleQRScan = (decodedText: string) => {
+    setContent(decodedText);
+    executeAnalyze(decodedText, "qr");
+  };
+
+  // 6. Handle user state transition ("What did you do?")
   const handleActionStateChange = async (newState: UserActionState) => {
     setUserActionState(newState);
 
@@ -166,6 +176,13 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
 
   return (
     <div className="w-full space-y-6">
+      {/* QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={showQRModal}
+        onClose={() => setShowQRModal(false)}
+        onScan={handleQRScan}
+      />
+
       {/* Web Share Notification Banner */}
       {shareReceived && (
         <div className="bg-indigo-950/80 border-2 border-indigo-500 rounded-xl p-3.5 flex items-center gap-3 text-indigo-200 animate-fadeIn">
@@ -211,6 +228,15 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
               <span>{t("home.pasteButton", "Paste from Clipboard")}</span>
             </button>
 
+            <button
+              onClick={() => setShowQRModal(true)}
+              type="button"
+              className="min-h-touch px-3.5 py-2 rounded-xl bg-indigo-950/80 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/80 text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm"
+            >
+              <QrCode className="w-4 h-4 text-indigo-400" />
+              <span>{t("home.scanQrButton", "Scan QR Code")}</span>
+            </button>
+
             {content && (
               <button
                 onClick={handleClear}
@@ -235,7 +261,7 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
         {/* Big Touch-Target Scan Button */}
         <div className="mt-5">
           <button
-            onClick={handleAnalyze}
+            onClick={() => executeAnalyze(content)}
             disabled={loading || !content.trim()}
             className={`w-full min-h-[56px] py-3.5 px-6 rounded-2xl font-black text-lg md:text-xl flex items-center justify-center gap-3 transition-all shadow-lg ${
               loading || !content.trim()
