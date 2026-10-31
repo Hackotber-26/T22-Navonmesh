@@ -73,10 +73,17 @@ export default function HomePage() {
       </main>
 
       {/* Accessible Footer with Privacy & Open Source notice */}
-      <footer className="w-full bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500 space-y-2 px-4">
+      <footer className="w-full bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500 space-y-2.5 px-4">
         <p className="flex items-center justify-center gap-1.5 font-medium text-slate-400">
           <Shield className="w-4 h-4 text-emerald-500" />
           <span>Zero User Content Stored • DPDP Act 2023 Compliant • Free & Open Source</span>
+        </p>
+        <p className="flex items-center justify-center gap-3 text-slate-400 text-xs">
+          <a href="/privacy" className="hover:text-emerald-400 underline transition-colors">Privacy Policy</a>
+          <span>•</span>
+          <a href="/terms" className="hover:text-indigo-400 underline transition-colors">Terms & Conditions</a>
+          <span>•</span>
+          <a href="/thank-you" className="hover:text-amber-400 underline transition-colors">Safety Confirmation</a>
         </p>
         <p>
           Built for Hacktoberfest Hack Day 2026 with <Heart className="w-3 h-3 inline text-red-500" /> for Indian Digital Citizens.

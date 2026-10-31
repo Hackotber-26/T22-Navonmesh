@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useI18n } from "../i18n/context";
 import { UserActionState } from "./ActionStateSelector";
 import {
@@ -15,6 +16,7 @@ import {
   Square,
   Building2,
   Download,
+  CheckCircle2,
 } from "lucide-react";
 
 interface ActionChecklistProps {
@@ -261,6 +263,17 @@ Note: This summary is prepared for submission to the National Cyber Crime Portal
             </div>
           );
         })}
+      </div>
+
+      {/* Safety Confirmation & Thank You Link */}
+      <div className="pt-3">
+        <Link
+          href="/thank-you"
+          className="w-full min-h-touch p-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-emerald-300 font-bold flex items-center justify-center gap-2 text-sm sm:text-base transition-colors shadow-sm"
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+          <span>I Have Completed These Steps &rarr; View Confirmation</span>
+        </Link>
       </div>
     </div>
   );

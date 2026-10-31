@@ -8,16 +8,33 @@
   --background-end-rgb: 15, 23, 42;
 }
 
-body {
+html, body {
   color: rgb(var(--foreground-rgb));
   background: #0f172a;
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
-/* Ensure accessible touch target sizes */
+/* Ensure accessible touch target sizes on mobile */
 button, a, input, textarea {
   touch-action: manipulation;
 }
 
+/* Fade in animation for verdicts and modals */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out forwards;
+}

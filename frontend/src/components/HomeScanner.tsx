@@ -6,6 +6,7 @@ import { VerdictBanner, AnalyzeResult } from "./VerdictBanner";
 import { ActionStateSelector, UserActionState } from "./ActionStateSelector";
 import { ActionChecklist } from "./ActionChecklist";
 import { QRScannerModal } from "./QRScannerModal";
+import { ApkVerdictCard, ApkAnalyzeResult } from "./ApkVerdictCard";
 import {
   Clipboard,
   QrCode,
@@ -16,6 +17,9 @@ import {
   Loader2,
   CheckCircle2,
   Image as ImageIcon,
+  Package,
+  XCircle,
+  RefreshCw
 } from "lucide-react";
 
 interface HomeScannerProps {
@@ -38,7 +42,20 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
   const [ocrProgress, setOcrProgress] = useState<string>("");
   const [ocrSuccessNotice, setOcrSuccessNotice] = useState<string | null>(null);
   const [lastInputType, setLastInputType] = useState<"text" | "url" | "qr">("text");
+
+  // APK Scanning States
+  const [apkLoading, setApkLoading] = useState<boolean>(false);
+  const [apkProgress, setApkProgress] = useState<string>("");
+  const [apkResult, setApkResult] = useState<ApkAnalyzeResult | null>(null);
+
+  // Loading States & Timeout Handling
+  const [isSlowChecking, setIsSlowChecking] = useState<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const slowTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const screenshotInputRef = useRef<HTMLInputElement | null>(null);
+  const apkInputRef = useRef<HTMLInputElement | null>(null);
 
   // 1. Detect Web Share Target query params on mount
   useEffect(() => {
@@ -51,6 +68,15 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
+  }, []);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
   }, []);
 
   // 2. Paste from clipboard helper
@@ -73,13 +99,20 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
 
   // 3. Clear all state
   const handleClear = () => {
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+    setIsSlowChecking(false);
     setContent("");
     setResult(null);
+    setApkResult(null);
     setError(null);
     setShareReceived(false);
     setOcrSuccessNotice(null);
     setOcrProgress("");
     setOcrLoading(false);
+    setApkLoading(false);
+    setApkProgress("");
     setUserActionState("not_acted");
     setActionCodes([]);
     setLastInputType("text");
@@ -95,8 +128,25 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     }
 
     setLoading(true);
+    setIsSlowChecking(false);
     setError(null);
     setOcrSuccessNotice(null);
+    setApkResult(null);
+
+    // Setup 8s slow alert and 15s timeout
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    slowTimerRef.current = setTimeout(() => {
+      setIsSlowChecking(true);
+    }, 8000);
+
+    timeoutTimerRef.current = setTimeout(() => {
+      controller.abort();
+      setLoading(false);
+      setIsSlowChecking(false);
+      setError("Analysis timed out. Please check your connection and tap Retry.");
+    }, 15000);
 
     let inputType: "text" | "url" | "qr" = explicitInputType || lastInputType || "text";
     if (!explicitInputType) {
@@ -133,6 +183,7 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers,
+        signal: controller.signal,
         body: JSON.stringify({
           input_type: inputType,
           content: trimmed,
@@ -155,10 +206,28 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
         onAnalyzeComplete(data);
       }
     } catch (err: any) {
+      if (err.name === "AbortError") {
+        return; // Handled by timeout
+      }
       setError(err.message || "Network error. Please check your connection.");
     } finally {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
       setLoading(false);
+      setIsSlowChecking(false);
     }
+  };
+
+  // Cancel in-progress check
+  const handleCancelCheck = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+    setLoading(false);
+    setIsSlowChecking(false);
+    setError("Analysis cancelled.");
   };
 
   // 5. Handle QR scan callback
@@ -166,10 +235,11 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     setContent(decodedText);
     setLastInputType("qr");
     setOcrSuccessNotice(null);
+    setApkResult(null);
     executeAnalyze(decodedText, "qr");
   };
 
-  // 6. Handle Screenshot OCR upload with in-browser WebAssembly reading
+  // 6. Handle Screenshot OCR upload
   const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -186,12 +256,11 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     setOcrProgress("Preparing OCR engine...");
     setError(null);
     setOcrSuccessNotice(null);
-    setResult(null); // Ensure verdict is hidden until user clicks "Check for Scam"
+    setResult(null);
+    setApkResult(null);
 
     try {
-      // Dynamic import of tesseract.js WebAssembly
       const Tesseract = (await import("tesseract.js")).default;
-
       setOcrProgress("Reading text from screenshot... 0%");
       const ocrResult = await Tesseract.recognize(
         file,
@@ -209,22 +278,18 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
       );
 
       const extractedText = ocrResult?.data?.text?.trim() || "";
-
       if (!extractedText || extractedText.length < 3) {
         throw new Error(
           "Could not detect clear text in this screenshot. Please ensure the image is clear or type the message above."
         );
       }
 
-      // Populate input box with genuine extracted text
       setContent(extractedText);
       setLastInputType("text");
       setOcrSuccessNotice(
         "Screenshot text extracted! Review the message in the box below, then tap 'Check for Scam' to analyze."
       );
     } catch (err: any) {
-      console.warn("Client OCR failed or fallback required:", err);
-      // Fallback: try backend API endpoint
       try {
         setOcrProgress("Verifying text with server...");
         const formData = new FormData();
@@ -260,7 +325,55 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
     }
   };
 
-  // 7. Handle user state transition ("What did you do?")
+  // 7. Handle APK File Upload & Fine Print Loophole Inspection
+  const handleApkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      setError("APK file size exceeds 25MB threshold for in-memory inspection. Please choose a smaller package.");
+      if (apkInputRef.current) {
+        apkInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setApkLoading(true);
+    setApkProgress("Reading APK archive in-memory...");
+    setError(null);
+    setResult(null);
+    setApkResult(null);
+    setOcrSuccessNotice(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      setApkProgress("Inspecting AndroidManifest permissions & legal fine print...");
+      const response = await fetch("/api/analyze/apk", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Unable to inspect APK file. Ensure file is a valid Android package.");
+      }
+
+      const data: ApkAnalyzeResult = await response.json();
+      setApkResult(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to inspect APK file.");
+    } finally {
+      setApkLoading(false);
+      setApkProgress("");
+      if (apkInputRef.current) {
+        apkInputRef.current.value = "";
+      }
+    }
+  };
+
+  // 8. Handle user state transition ("What did you do?")
   const handleActionStateChange = async (newState: UserActionState) => {
     setUserActionState(newState);
 
@@ -329,25 +442,25 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
           className="w-full p-4 rounded-xl bg-slate-800/90 border-2 border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-base md:text-lg resize-y min-h-[140px]"
         />
 
-        {/* Quick Action Helper Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 mt-3">
-          <div className="flex flex-wrap items-center gap-2">
+        {/* Quick Action Helper Buttons - Responsive for Small Mobile Displays */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <button
               onClick={handlePaste}
               type="button"
-              className="min-h-touch px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-semibold flex items-center gap-2 transition-colors"
+              className="min-h-touch px-3 sm:px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors"
             >
-              <Clipboard className="w-4 h-4 text-indigo-400" />
+              <Clipboard className="w-4 h-4 text-indigo-400 shrink-0" />
               <span>{t("home.pasteButton", "Paste from Clipboard")}</span>
             </button>
 
             <button
               onClick={() => setShowQRModal(true)}
               type="button"
-              className="min-h-touch px-3.5 py-2 rounded-xl bg-indigo-950/80 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/80 text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm"
+              className="min-h-touch px-3 sm:px-3.5 py-2 rounded-xl bg-indigo-950/80 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/80 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
             >
-              <QrCode className="w-4 h-4 text-indigo-400" />
-              <span>{t("home.scanQrButton", "Scan QR Code")}</span>
+              <QrCode className="w-4 h-4 text-indigo-400 shrink-0" />
+              <span>{t("home.scanQrButton", "Scan QR")}</span>
             </button>
 
             {/* Screenshot OCR Upload */}
@@ -361,19 +474,36 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
             <button
               onClick={() => screenshotInputRef.current?.click()}
               type="button"
-              className="min-h-touch px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm"
+              className="min-h-touch px-3 sm:px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
             >
-              <ImageIcon className="w-4 h-4 text-amber-400" />
+              <ImageIcon className="w-4 h-4 text-amber-400 shrink-0" />
               <span>Upload Screenshot</span>
+            </button>
+
+            {/* APK File Scanner */}
+            <input
+              ref={apkInputRef}
+              type="file"
+              accept=".apk,application/vnd.android.package-archive"
+              className="hidden"
+              onChange={handleApkUpload}
+            />
+            <button
+              onClick={() => apkInputRef.current?.click()}
+              type="button"
+              className="min-h-touch px-3 sm:px-3.5 py-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/80 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <Package className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Check APK File</span>
             </button>
 
             {content && (
               <button
                 onClick={handleClear}
                 type="button"
-                className="min-h-touch px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-sm font-semibold flex items-center gap-1.5 transition-colors"
+                className="min-h-touch px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-xs sm:text-sm font-semibold flex items-center gap-1 transition-colors"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 <span>{t("home.clearButton", "Clear")}</span>
               </button>
             )}
@@ -391,6 +521,17 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
           </div>
         )}
 
+        {/* APK Inspection In-Progress Status Card */}
+        {apkLoading && (
+          <div className="mt-3.5 p-4 rounded-xl bg-emerald-950/90 border-2 border-emerald-500/80 text-emerald-100 flex items-center gap-3 animate-pulse">
+            <Loader2 className="w-6 h-6 animate-spin text-emerald-400 shrink-0" />
+            <div>
+              <p className="font-bold text-sm md:text-base">Inspecting APK File & Reading Fine Print...</p>
+              <p className="text-xs text-emerald-300 font-mono mt-0.5">{apkProgress}</p>
+            </div>
+          </div>
+        )}
+
         {/* OCR Success Banner */}
         {ocrSuccessNotice && (
           <div className="mt-3.5 p-4 rounded-xl bg-emerald-950/80 border-2 border-emerald-500 text-emerald-200 flex items-center gap-3 animate-fadeIn">
@@ -401,11 +542,38 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
           </div>
         )}
 
-        {/* Error Notice */}
+        {/* Error Notice with Retry Option */}
         {error && (
-          <div className="mt-3.5 p-3 rounded-xl bg-red-950/80 border border-red-500 text-red-200 flex items-center gap-2 text-sm font-medium">
-            <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
-            <span>{error}</span>
+          <div className="mt-3.5 p-3.5 rounded-xl bg-red-950/80 border border-red-500 text-red-200 flex items-center justify-between gap-2 text-sm font-medium">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+              <span>{error}</span>
+            </div>
+            {content.trim() && (
+              <button
+                onClick={() => executeAnalyze(content, lastInputType)}
+                type="button"
+                className="px-3 py-1 rounded-lg bg-red-900/80 hover:bg-red-800 text-white text-xs font-bold flex items-center gap-1 shrink-0 border border-red-700"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Retry</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Slow Checking Alert (> 8 seconds) with Cancel option */}
+        {isSlowChecking && loading && (
+          <div className="mt-3.5 p-3 rounded-xl bg-amber-950/80 border border-amber-500 text-amber-200 flex items-center justify-between gap-3 text-xs sm:text-sm">
+            <span>Still checking with threat intelligence feeds...</span>
+            <button
+              onClick={handleCancelCheck}
+              type="button"
+              className="px-2.5 py-1 rounded bg-amber-900 hover:bg-amber-800 text-amber-200 text-xs font-bold flex items-center gap-1 border border-amber-600 shrink-0"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Cancel</span>
+            </button>
           </div>
         )}
 
@@ -416,9 +584,9 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
               setOcrSuccessNotice(null);
               executeAnalyze(content, lastInputType);
             }}
-            disabled={loading || ocrLoading || !content.trim()}
+            disabled={loading || ocrLoading || apkLoading || !content.trim()}
             className={`w-full min-h-[56px] py-3.5 px-6 rounded-2xl font-black text-lg md:text-xl flex items-center justify-center gap-3 transition-all shadow-lg ${
-              loading || ocrLoading || !content.trim()
+              loading || ocrLoading || apkLoading || !content.trim()
                 ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
                 : ocrSuccessNotice
                 ? "bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white shadow-emerald-900/40 ring-4 ring-emerald-500/50 active:scale-[0.99] animate-pulse"
@@ -428,12 +596,17 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
             {loading ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin text-white" />
-                <span>{t("home.analyzing", "Analyzing for threats...")}</span>
+                <span>{isSlowChecking ? "Still checking..." : t("home.analyzing", "Checking...")}</span>
               </>
             ) : ocrLoading ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
                 <span>Reading Screenshot...</span>
+              </>
+            ) : apkLoading ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+                <span>Inspecting APK Package...</span>
               </>
             ) : (
               <>
@@ -445,8 +618,13 @@ export function HomeScanner({ onAnalyzeComplete, onReset }: HomeScannerProps) {
         </div>
       </div>
 
-      {/* Result Verdict Card */}
-      {result && (
+      {/* APK Security & Fine Print Loophole Verdict Card */}
+      {apkResult && (
+        <ApkVerdictCard result={apkResult} onReset={handleClear} />
+      )}
+
+      {/* Standard Result Verdict Card (Text, URL, QR, Screenshot) */}
+      {result && !apkResult && (
         <div className="space-y-6 animate-fadeIn">
           <VerdictBanner result={result} />
 
