@@ -344,3 +344,4 @@ class URLAnalyzer:
 
 
 url_analyzer = URLAnalyzer()
+

@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "language": "en",
+    "name": "English",
+    "reviewed": true
+  },
+  "app": {
+    "title": "ScamShield India",
+    "tagline": "Protect your family from fake UPI, KYC & WhatsApp scams",
+    "subtitle": "Check suspicious messages, links, and QR codes before you tap",
+    "privacy_badge": "100% Private • No message is ever stored",
+    "fontSizeToggle": "Text Size",
+    "changeLanguage": "Change Language"
+  },
+  "languages": {
+    "en": "English",
+    "hi": "हिन्दी (Hindi)",
+    "bn": "বাংলা (Bengali)",
+    "mr": "मराठी (Marathi)",
+    "kn": "ಕನ್ನಡ (Kannada)"
+  },
+  "languagePicker": {
+    "title": "Select your language",
+    "subtitle": "अपनी भाषा चुनें • আপনার ভাষা নির্বাচন করুন",
+    "confirm": "Continue"
+  },
+  "home": {
+    "inputPlaceholder": "Paste message text, link, or UPI message here...",
+    "pasteButton": "Paste from Clipboard",
+    "scanQrButton": "Scan QR Code",
+    "checkButton": "Check for Scam",
+    "clearButton": "Clear",
+    "analyzing": "Analyzing for threats...",
+    "shareReceivedBanner": "Message received via Share. Tap 'Check for Scam' to inspect."
+  },
+  "verdict": {
+    "low": {
+      "label": "SAFE",
+      "tagline": "No obvious scam indicators detected. Stay alert."
+    },
+    "medium": {
+      "label": "SUSPICIOUS - BE CAREFUL",
+      "tagline": "Contains unverified links or urgent wording. Do not send money."
+    },
+    "high": {
+      "label": "HIGH RISK - LIKELY SCAM",
+      "tagline": "High probability of fraud. Do not tap any link or share PIN."
+    },
+    "critical": {
+      "label": "DANGER - CONFIRMED THREAT",
+      "tagline": "Active phishing link or known fraud pattern. Stop immediately!"
+    },
+    "scoreLabel": "Risk Score",
+    "categoryLabel": "Threat Type",
+    "reasonsHeading": "Why this was flagged",
+    "domainsDetected": "Links analyzed",
+    "listenAudio": "Listen Voice Alert",
+    "playingAudio": "Playing voice guidance..."
+  },
+  "actionState": {
+    "heading": "What did you do?",
+    "prompt": "Choose your current situation to see the exact steps to take:",
+    "not_acted": {
+      "title": "Nothing yet",
+      "desc": "I haven't clicked or paid"
+    },
+    "clicked": {
+      "title": "I clicked or entered details",
+      "desc": "I opened the link or gave info"
+    },
+    "paid": {
+      "title": "I sent money",
+      "desc": "Money was debited or transferred"
+    }
+  },
+  "checklist": {
+    "heading": "What to do right now",
+    "call1930": "Call 1930 Helpline",
+    "openPortal": "Open Cybercrime Portal",
+    "copyComplaint": "Copy Complaint Summary",
+    "copied": "Copied to clipboard!",
+    "shareFamily": "Warn Family on WhatsApp",
+    "callBank": "Call Bank Support"
+  },
+  "categories": {
+    "UPI_COLLECT_FRAUD": "Fake UPI Collect Fraud",
+    "FAKE_KYC": "Fake Bank / KYC Suspension",
+    "FAKE_BANK_LINK": "Phishing Bank Link",
+    "PARCEL_DELIVERY": "Fake Courier / Parcel Trap",
+    "ELECTRICITY_BILL": "Fake Electricity Disconnection Threat",
+    "LOTTERY_PRIZE": "Fake Lottery / Prize Scam",
+    "JOB_SCAM": "Work-From-Home Job Trap",
+    "MALICIOUS_QR": "Malicious Payment QR Code",
+    "OTHER": "Suspicious Message"
+  },
+  "reasons": {
+    "URGENCY": "Creates false urgency (e.g. 'immediately', 'within 24 hours')",
+    "THREAT_OF_BLOCKING": "Threatens to block your account, SIM, or electricity",
+    "FAKE_BANK_DOMAIN": "Impersonates an official Indian bank domain",
+    "LOOKALIKE_DOMAIN": "Uses a lookalike website name mimicking a trusted brand",
+    "SHORTENED_URL": "Hides the actual destination behind a short link",
+    "SUSPICIOUS_TLD": "Uses a cheap domain extension (.xyz, .top, .site, etc.)",
+    "UPI_COLLECT_REQUEST": "Demands an outgoing UPI payment instead of sending money",
+    "ENTER_PIN_TO_RECEIVE": "Asks you to enter your UPI PIN to receive money (PIN is ONLY for sending)",
+    "ASKS_FOR_OTP": "Asks you to share OTP (Banks NEVER ask for OTP)",
+    "FAKE_KYC_PROMPT": "Demands urgent KYC update or PAN card linking",
+    "PRIZE_OR_LOTTERY": "Claims you won an unearned prize or lottery",
+    "PARCEL_FEE_REQUEST": "Demands courier fee or customs clearance for a fake parcel",
+    "ELECTRICITY_DISCONNECT_THREAT": "Threatens power cutoff tonight over unpaid bills",
+    "KNOWN_PHISHING_FEED_MATCH": "Matches active cybercrime threat intelligence blacklist",
+    "QR_LEADS_TO_PAYMENT": "QR code initiates outgoing payment instead of deposit",
+    "UNKNOWN_SENDER_IMPERSONATION": "Impersonates an official officer or bank executive",
+    "EXCESSIVE_PUNYCODE_OR_DIGITS": "Uses an IP address or deceptive encoded characters"
+  },
+  "actions": {
+    "DO_NOT_CLICK": "Do NOT click any link in the message",
+    "DO_NOT_REPLY": "Do NOT reply or call the given phone number",
+    "NEVER_SHARE_OTP_PIN": "NEVER share your OTP, password, or UPI PIN with anyone",
+    "NO_PIN_TO_RECEIVE": "Remember: UPI PIN is ONLY entered to SEND money, NEVER to receive",
+    "DECLINE_COLLECT_REQUEST": "Open your UPI app and DECLINE / REJECT the collect request immediately",
+    "VERIFY_OFFICIAL": "Verify by calling the official customer care number on the back of your card",
+    "DELETE_AND_BLOCK": "Block the sender number and delete the message",
+    "INFORM_FAMILY": "Tell your children or family members before taking any action",
+    "CHANGE_PASSWORD": "Change your bank password and reset your UPI PIN immediately",
+    "CALL_BANK": "Call your bank's 24x7 toll-free helpline to freeze your account/cards",
+    "REPORT_1930": "Call 1930 IMMEDIATELY (National Cyber Crime Helpline - First 2 Hours Golden Period)",
+    "REPORT_PORTAL": "File an official complaint at https://cybercrime.gov.in",
+    "REPORT_SANCHAR_SAATHI": "Report the fraudulent SMS on Sanchar Saathi (Chakshu)",
+    "REPORT_IN_APP": "Report and block the sender directly in WhatsApp or your SMS app",
+    "SAVE_EVIDENCE": "Take screenshots of the message, link, and transaction ID as proof"
+  }
+}

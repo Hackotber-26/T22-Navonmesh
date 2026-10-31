@@ -79,3 +79,4 @@ class AnalyzeResponse(BaseModel):
         default_factory=list,
         description="Sanitized domain names detected (excluding full paths or user queries)"
     )
+
