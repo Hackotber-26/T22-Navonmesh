@@ -1,0 +1,221 @@
+{
+  "project": {
+    "name": "ScamShield India",
+    "version": "2.0.0",
+    "tagline": "Protecting Indian Digital Citizens from Cyber Fraud, Malicious APKs, and Fine-Print Scams",
+    "type": "Mobile-First PWA (Progressive Web App)",
+    "targetAudience": {
+      "primary": "Elderly and first-time smartphone users in India with low tech/digital literacy",
+      "devices": "Low to mid-range Android smartphones (320px–412px viewports)",
+      "languages": ["English", "Hindi (हिन्दी)", "Bengali (বাংলা)", "Marathi (मराठी)", "Kannada (ಕನ್ನಡ)"]
+    },
+    "coreDesignPrinciples": [
+      "Clarity under panic: zero technical jargon, immediate color-coded verdict",
+      "Tactile accessibility: minimum 48px to 56px touch targets",
+      "Audio-first support: prominent native voice explanation playback",
+      "Zero friction: no login/signup walls; instant analysis",
+      "DPDP Act 2023 zero-retention privacy compliance"
+    ]
+  },
+  "designSystem": {
+    "theme": "Sleek Dark Mode (Optimized for low-end AMOLED & battery saving)",
+    "colorTokens": {
+      "background": "#0B0F19",
+      "surface": "#131C31",
+      "surfaceHover": "#1E2B4A",
+      "border": "#233252",
+      "textPrimary": "#F8FAFC",
+      "textSecondary": "#94A3B8",
+      "brandAccent": "#6366F1",
+      "brandAccentHover": "#4F46E5",
+      "verdictDanger": {
+        "hex": "#EF4444",
+        "bgSurface": "#450A0A",
+        "border": "#DC2626",
+        "description": "Used ONLY for confirmed scams, malware APKs, or phishing links"
+      },
+      "verdictCaution": {
+        "hex": "#F59E0B",
+        "bgSurface": "#451A03",
+        "border": "#D97706",
+        "description": "Used for suspicious urgency tactics, unverified senders, or elevated APK permissions"
+      },
+      "verdictSafe": {
+        "hex": "#10B981",
+        "bgSurface": "#064E3B",
+        "border": "#059669",
+        "description": "Used for verified legitimate Indian banking, telecom, or government entities"
+      }
+    },
+    "typography": {
+      "fontFamily": "Inter, Outfit, Noto Sans Devanagari, system-ui, sans-serif",
+      "minInputFontSize": "16px",
+      "headings": {
+        "h1": "28px - 36px font-black",
+        "h2": "20px - 24px font-bold",
+        "body": "15px - 16px font-normal",
+        "caption": "12px - 13px font-medium"
+      }
+    },
+    "borderRadius": {
+      "card": "20px - 24px",
+      "button": "14px - 18px",
+      "badge": "9999px"
+    }
+  },
+  "screens": [
+    {
+      "id": "screen_home_scanner",
+      "title": "Universal Threat & APK Scanner",
+      "purpose": "Primary landing screen where users paste text, scan QR codes, upload screenshots, or check APK packages.",
+      "components": [
+        {
+          "name": "Header",
+          "elements": [
+            "ScamShield India logo badge with security emblem",
+            "Prominent one-tap Language Selector pill (e.g., '🌐 हिंदी')",
+            "Navigation links: Privacy (DPDP Act) and Terms"
+          ]
+        },
+        {
+          "name": "Hero Trust Affirmation",
+          "elements": [
+            "Headline: 'Check any message, link, QR, or Android APK'",
+            "Trust micro-badge: '100% Private • Zero Data Stored • Govt 1930 Integrated'"
+          ]
+        },
+        {
+          "name": "Unified Input Box",
+          "elements": [
+            "High-contrast multiline text area with friendly Indian scam placeholder examples",
+            "Action toolbar: '📋 Paste Clipboard', '📷 Scan QR', '🖼️ Upload Screenshot', '📦 Check APK File', 'Clear'",
+            "Big Primary CTA: '🔍 Check Now (तुरंत जांचें)' (56px tall, high tactile feedback)"
+          ]
+        },
+        {
+          "name": "Loading & Feedback States",
+          "elements": [
+            "Multi-stage animated progress card with status updates",
+            "Slow-connection banner (>8s): 'Still checking threat feeds...' with Cancel button",
+            "Error notice with 1-click 'Retry' button"
+          ]
+        },
+        {
+          "name": "Emergency Pinned Footer",
+          "elements": [
+            "National Cyber Crime Helpline: 'Dial 1930 (Toll Free 24x7)'",
+            "Official reporting portal: cybercrime.gov.in"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screen_verdict_card",
+      "title": "Instant Verdict & Voice Advice",
+      "purpose": "Displayed immediately after analyzing text, links, or QR codes.",
+      "components": [
+        {
+          "name": "Verdict Banner",
+          "elements": [
+            "Massive traffic-light status pill (RED Danger / AMBER Suspicious / GREEN Safe)",
+            "Plain-language explanation (zero technical jargon)",
+            "Confidence & Risk Score indicator"
+          ]
+        },
+        {
+          "name": "Voice Guidance Player",
+          "elements": [
+            "Prominent audio button: '🔊 Listen in Hindi / हिंदी में सुनें'",
+            "Audio wave animation playing pre-synthesized native speech"
+          ]
+        },
+        {
+          "name": "Threat Category Tags",
+          "elements": [
+            "Visual badge pills (e.g. 'Fake Electricity Bill', 'Lookalike Banking Domain', 'Urgency Pressure Tactics')"
+          ]
+        },
+        {
+          "name": "Action Checklist",
+          "elements": [
+            "1. Do not reply or transfer funds",
+            "2. Block sender on WhatsApp / SMS",
+            "3. Report immediately on 1930",
+            "Link to safety confirmation (/thank-you)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screen_apk_loophole_inspector",
+      "title": "APK Malware & Predatory Fine-Print Loophole Reader",
+      "purpose": "Displays dangerous Android permissions and warns against hidden predatory terms of service clauses in APK files.",
+      "components": [
+        {
+          "name": "App Identity & Risk Banner",
+          "elements": [
+            "Package Name, Version, App Label, and Total Permissions Count",
+            "Critical Security Warning verdict if malicious trojan indicators are present"
+          ]
+        },
+        {
+          "name": "Dangerous Permissions Breakdown",
+          "elements": [
+            "RECEIVE_SMS / READ_SMS (OTP Theft)",
+            "BIND_ACCESSIBILITY_SERVICE (Screen Overlay / Banking Keylogger)",
+            "READ_CONTACTS (Predatory Loan Shark Blackmail)",
+            "SYSTEM_ALERT_WINDOW (Fake Screen / Lock Screen Hijack)"
+          ]
+        },
+        {
+          "name": "Predatory Fine-Print Loophole Warnings",
+          "elements": [
+            "Warning 1: Contact Harassment & Recovery Blackmail clause (shows quoted text excerpt)",
+            "Warning 2: Hidden Recurring Auto-Debit & Subscription Fees (shows quoted text excerpt)",
+            "Warning 3: Legal Recourse & Class-Action Waiver (shows quoted text excerpt)",
+            "Warning 4: Gallery & Camera Storage Scraping (shows quoted text excerpt)",
+            "Warning 5: Third-Party Data Resale (shows quoted text excerpt)"
+          ]
+        },
+        {
+          "name": "Action Recommendation",
+          "elements": [
+            "High-contrast alert button: '🗑️ Uninstall or Delete File Immediately'"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screen_supporting_routes",
+      "title": "PWA Modals & Legal Pages",
+      "routes": [
+        {
+          "path": "/privacy",
+          "title": "Privacy Policy",
+          "highlight": "Zero-retention architecture complying with Digital Personal Data Protection (DPDP) Act 2023"
+        },
+        {
+          "path": "/terms",
+          "title": "Terms & Conditions",
+          "highlight": "Safety guidance disclaimers and emergency 1930 reporting protocols"
+        },
+        {
+          "path": "/thank-you",
+          "title": "Safety Confirmation",
+          "highlight": "Positive cyber hygiene confirmation with 1-click WhatsApp family sharing card"
+        },
+        {
+          "path": "/not-found",
+          "title": "Custom 404 Error",
+          "highlight": "Friendly navigation back to scanner and quick 1930 emergency helpline access"
+        }
+      ]
+    }
+  ],
+  "deliverablesRequested": [
+    "High-fidelity mobile UI redesign (Figma/HTML/CSS preview)",
+    "Enhanced tactile layout for elderly users with big touch targets",
+    "Modern glassmorphism/neumorphism dark theme tokens",
+    "WhatsApp-shareable family warning card format"
+  ]
+}
