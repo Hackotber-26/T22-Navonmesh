@@ -17,9 +17,39 @@ from backend.app.models.user import User
 from backend.app.schemas.analyze import AnalyzeRequest, AnalyzeResponse, UserActionState
 from backend.app.services.detector import detector
 from backend.app.services.action_engine import action_engine
+from backend.app.services.apk_analyzer import apk_analyzer
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["analysis"])
+
+
+class DangerousPermissionResponse(BaseModel):
+    key: str
+    name: str
+    risk_level: str
+    description: str
+    abuse_scenario: str
+
+
+class FinePrintLoopholeResponse(BaseModel):
+    category: str
+    title: str
+    risk_level: str
+    explanation: str
+    excerpt: str
+
+
+class ApkAnalyzeResponse(BaseModel):
+    incident_id: Optional[str] = None
+    app_name: str
+    package_name: str
+    risk_score: float
+    risk_level: str
+    category: str
+    verdict_summary: str
+    dangerous_permissions: list[DangerousPermissionResponse] = []
+    fine_print_loopholes: list[FinePrintLoopholeResponse] = []
+    action_codes: list[str] = []
 
 
 class UpdateActionStateRequest(BaseModel):
@@ -196,6 +226,92 @@ async def analyze_screenshot_ocr(
         rules_version=result["rules_version"],
         extracted_domains=result["extracted_domains"],
         extracted_text=extracted_text
+    )
+
+
+@router.post(
+    "/api/analyze/apk",
+    response_model=ApkAnalyzeResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(check_rate_limit)]
+)
+async def analyze_apk(
+    file: UploadFile = File(..., description="Android APK package file (.apk)"),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Perform client-side in-memory APK analysis.
+    Extracts AndroidManifest permissions and scans embedded terms/privacy fine print
+    for predatory loopholes, contact harassment, and banking trojan signatures.
+    Raw APK bytes are permanently wiped from memory immediately upon completion.
+    """
+    filename = file.filename or "unknown.apk"
+    if not (filename.lower().endswith(".apk") or file.content_type in ["application/vnd.android.package-archive", "application/octet-stream", "application/zip"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file format. Please upload an Android application (.apk) package."
+        )
+
+    apk_bytes = await file.read()
+    if len(apk_bytes) > (25 * 1024 * 1024):  # 25MB safety threshold
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="APK file size exceeds 25MB threshold for in-memory inspection."
+        )
+
+    try:
+        apk_result = apk_analyzer.analyze_apk_bytes(apk_bytes, filename)
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(ve)
+        )
+    except Exception as e:
+        logger.error(f"Failed to inspect APK package: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error inspecting APK archive. Please ensure file is a valid Android package."
+        )
+    finally:
+        del apk_bytes  # Immediately free file bytes from system memory
+
+    # Record anonymous incident telemetry metadata (DPDP compliant)
+    incident_id = uuid.uuid4()
+    incident = Incident(
+        id=incident_id,
+        user_id=current_user.id if current_user else None,
+        input_type="apk",
+        category=apk_result["category"],
+        risk_level=apk_result["risk_level"],
+        risk_score=apk_result["risk_score"],
+        reason_codes=[p["key"] for p in apk_result["dangerous_permissions"]] + [l["category"] for l in apk_result["fine_print_loopholes"]],
+        language="en",
+        domain_hash=None,
+        user_action_state="not_acted",
+        actions_shown=apk_result["action_codes"],
+        model_version="apk-fine-print-v1",
+        rules_version="v1.0.0"
+    )
+
+    try:
+        db.add(incident)
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Failed to record incident metadata for APK: {e}")
+        await db.rollback()
+
+    return ApkAnalyzeResponse(
+        incident_id=str(incident_id),
+        app_name=apk_result["app_name"],
+        package_name=apk_result["package_name"],
+        risk_score=apk_result["risk_score"],
+        risk_level=apk_result["risk_level"],
+        category=apk_result["category"],
+        verdict_summary=apk_result["verdict_summary"],
+        dangerous_permissions=apk_result["dangerous_permissions"],
+        fine_print_loopholes=apk_result["fine_print_loopholes"],
+        action_codes=apk_result["action_codes"]
     )
 
 
